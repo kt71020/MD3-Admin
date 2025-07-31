@@ -1,12 +1,49 @@
 import 'package:admin/app/theme/app_text_theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:get/get.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app/routes/app_pages.dart';
+import 'app/services/auth_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize environment variables
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint('Environment variables loaded successfully');
+  } catch (e) {
+    debugPrint('Warning: Could not load .env file: $e');
+    debugPrint('Using default configuration values');
+  }
+
+  // Initialize Firebase with platform-specific options
+  if (kIsWeb) {
+    // Web 配置 - 使用 index.html 中定義的配置
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyDGECPQu5Z4xudlX7Gg1HNvobA3Xs0BXc8",
+        authDomain: "must-dine-3.firebaseapp.com",
+        projectId: "must-dine-3",
+        storageBucket: "must-dine-3.firebasestorage.app",
+        messagingSenderId: "55834580879",
+        appId: "1:55834580879:web:ae05b720b04993b4681dfa",
+        measurementId: "G-BF76WDFZZD",
+      ),
+    );
+  } else {
+    // 移動端 (Android/iOS) - 使用配置文件
+    await Firebase.initializeApp();
+  }
+
+  // Initialize Auth Service
+  Get.put(AuthService());
+
   runApp(const MyApp());
 }
 
@@ -45,7 +82,7 @@ class MyApp extends StatelessWidget {
                   ),
                 ],
               ),
-          initialRoute: AppPages.initial,
+          initialRoute: Get.find<AuthService>().getInitialRoute(),
           getPages: AppPages.routes,
         );
       },
