@@ -108,7 +108,9 @@ class DashboardView extends GetView<DashboardController> {
               '歡迎回來！這是您的管理面板概覽',
               style: TextStyle(
                 fontSize: ResponsiveUtils.responsiveFontSize(context, 16),
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -197,13 +199,13 @@ class DashboardView extends GetView<DashboardController> {
                   fontSize: ResponsiveUtils.responsiveFontSize(context, 14),
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -248,9 +250,8 @@ class DashboardView extends GetView<DashboardController> {
                 Container(
                   height: 200,
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Center(
@@ -407,9 +408,9 @@ class DashboardView extends GetView<DashboardController> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: statusColor.withOpacity(0.3)),
+              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
             ),
             child: Text(
               status,
