@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../services/auth_service.dart';
 
 class DashboardController extends GetxController {
   // 統計數據
@@ -52,5 +53,14 @@ class DashboardController extends GetxController {
   /// 刷新數據
   Future<void> refreshData() async {
     await loadDashboardData();
+  }
+
+  /// 登出功能
+  Future<void> logout() async {
+    try {
+      await AuthService.instance.logout();
+    } catch (e) {
+      Get.snackbar('錯誤', '登出失敗: $e');
+    }
   }
 }

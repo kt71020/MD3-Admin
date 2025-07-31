@@ -26,6 +26,42 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
+  /// 顯示登出確認對話框
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.logout, color: Colors.red),
+              SizedBox(width: 8),
+              Text('確認登出'),
+            ],
+          ),
+          content: const Text('您確定要登出嗎？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                controller.logout();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('登出'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// 建立標題區域
   Widget _buildHeader(BuildContext context) {
     return Row(
@@ -115,17 +151,59 @@ class DashboardView extends GetView<DashboardController> {
             ),
           ],
         ),
-        ElevatedButton.icon(
-          onPressed: controller.refreshData,
-          icon: const Icon(Icons.refresh),
-          label: const Text('刷新數據'),
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.responsive(mobile: 16.0, desktop: 24.0),
-              vertical: context.responsive(mobile: 12.0, desktop: 16.0),
+        context.isMobile
+            ? Row(
+              children: [
+                // 手機版：只顯示圖標按鈕以節省空間
+                IconButton(
+                  onPressed: controller.refreshData,
+                  icon: const Icon(Icons.refresh),
+                  tooltip: '刷新數據',
+                ),
+                IconButton(
+                  onPressed: () => _showLogoutDialog(context),
+                  icon: const Icon(Icons.logout),
+                  tooltip: '登出',
+                  color: Colors.red,
+                ),
+              ],
+            )
+            : Row(
+              children: [
+                // 平板和桌面版：顯示完整按鈕
+                ElevatedButton.icon(
+                  onPressed: controller.refreshData,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('刷新數據'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.responsive(
+                        mobile: 16.0,
+                        desktop: 24.0,
+                      ),
+                      vertical: context.responsive(mobile: 12.0, desktop: 16.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _showLogoutDialog(context),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('登出'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.responsive(
+                        mobile: 16.0,
+                        desktop: 24.0,
+                      ),
+                      vertical: context.responsive(mobile: 12.0, desktop: 16.0),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
       ],
     );
   }
