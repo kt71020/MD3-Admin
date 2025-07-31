@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "55834580879",
+    "project_id": "must-dine-3",
+    "storage_bucket": "must-dine-3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:55834580879:android:f2f2987a44bd3610681dfa",
+        "android_client_info": {
+          "package_name": "com.uirapuka.md3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "55834580879-c3k8om2ppae9ujrn19hnn8jvs2k02fv8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.uirapuka.md3",
+            "certificate_hash": "1d74ee766810ccd5ae700dd45122a903c61e331b"
+          }
+        },
+        {
+          "client_id": "55834580879-v0ivdlv0r2bmguphuhhkcvcu58e5fls5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.uirapuka.md3",
+            "certificate_hash": "dc13e387293b5a915fe53f2c0f2eb2e733324e5d"
+          }
+        },
+        {
+          "client_id": "55834580879-lptjmr2sfob70hepcqfesesvdgu0pb4q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABFbxKih4F3CVD9VHLV55HSanQv3DD4Yo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "55834580879-lptjmr2sfob70hepcqfesesvdgu0pb4q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "55834580879-3mg79dmiklegbgl40jivj6gdpp4l35pk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.uirapuka.com"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
