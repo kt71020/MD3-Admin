@@ -14,7 +14,7 @@ class LoginController extends GetxController {
   late TextEditingController emailController;
   late TextEditingController passwordController;
 
-  // Form key for validation
+  // Form key for validation - create unique key for each instance
   final formKey = GlobalKey<FormState>();
 
   // Loading state
@@ -41,8 +41,8 @@ class LoginController extends GetxController {
     // Load saved email if available
     _loadSavedEmail();
 
-    // Check if user is already logged in
-    checkAuthState();
+    // Don't auto-navigate - let AuthService handle all navigation
+    // LoginController only handles form interactions
   }
 
   @override
@@ -52,12 +52,12 @@ class LoginController extends GetxController {
     super.onClose();
   }
 
-  // Check authentication state
+  // Check authentication state (for information only, no navigation)
   void checkAuthState() {
     final user = _auth.currentUser;
     if (user != null) {
-      // User is already logged in, redirect to dashboard
-      Get.offAllNamed('/dashboard');
+      debugPrint('User already logged in: ${user.email}');
+      // Let AuthService handle navigation - don't navigate here
     }
   }
 
@@ -147,8 +147,8 @@ class LoginController extends GetxController {
             colorText: Colors.white,
           );
 
-          // Navigate to dashboard manually after admin verification
-          Get.offAllNamed('/dashboard');
+          // Let AuthService handle navigation automatically
+          // No manual navigation needed here
         } else {
           // User is not an admin, sign them out and show error
           await AuthService.instance.logout();
