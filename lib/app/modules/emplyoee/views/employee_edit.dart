@@ -1,5 +1,6 @@
 import 'package:admin/app/core/utils/responsive_utils.dart';
 import 'package:admin/app/core/widgets/responsive_navigation.dart';
+import 'package:admin/app/core/constants/app_navigation.dart';
 import 'package:admin/app/models/emplyoee/emplyoee_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,20 +9,10 @@ import '../controllers/employee_controller.dart';
 class EmployeeEditView extends GetView<EmployeeController> {
   const EmployeeEditView({super.key});
 
-  // Navigation items
-  static final List<NavigationItem> navigationItems = [
-    NavigationItem(title: '儀表板', icon: Icons.dashboard, route: '/dashboard'),
-    NavigationItem(title: '用戶管理', icon: Icons.people, route: '/users'),
-    NavigationItem(title: '訂單管理', icon: Icons.shopping_cart, route: '/orders'),
-    NavigationItem(title: '產品管理', icon: Icons.inventory, route: '/products'),
-    NavigationItem(title: '員工管理', icon: Icons.inventory, route: '/emplyoee'),
-    NavigationItem(title: '設定', icon: Icons.settings, route: '/settings'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return ResponsiveNavigation(
-      navigationItems: navigationItems,
+      navigationItems: AppNavigation.mainNavigationItems,
       header: _buildHeader(context),
       body: _buildEditBody(context),
     );

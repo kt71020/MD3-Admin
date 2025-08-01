@@ -3,25 +3,16 @@ import 'package:get/get.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../../../core/widgets/responsive_navigation.dart';
+import '../../../core/constants/app_navigation.dart';
 import '../controllers/dashboard_controller.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
 
-  // 導航項目定義
-  static final List<NavigationItem> navigationItems = [
-    NavigationItem(title: '儀表板', icon: Icons.dashboard, route: '/dashboard'),
-    NavigationItem(title: '用戶管理', icon: Icons.people, route: '/users'),
-    NavigationItem(title: '訂單管理', icon: Icons.shopping_cart, route: '/orders'),
-    NavigationItem(title: '產品管理', icon: Icons.inventory, route: '/products'),
-    NavigationItem(title: '員工管理', icon: Icons.inventory, route: '/emplyoee'),
-    NavigationItem(title: '設定', icon: Icons.settings, route: '/settings'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return ResponsiveNavigation(
-      navigationItems: navigationItems,
+      navigationItems: AppNavigation.mainNavigationItems,
       header: _buildHeader(context),
       body: _buildDashboardBody(context),
     );
