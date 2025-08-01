@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -42,20 +43,60 @@ class AuthService extends GetxService {
     ever(_user, _setInitialScreen);
   }
 
+  // Navigation state to prevent duplicate navigation
+  bool _isNavigating = false;
+
   // Set initial screen based on auth state
   void _setInitialScreen(User? user) {
     isLoading.value = false;
 
+    // Prevent duplicate navigation calls
+    if (_isNavigating) {
+      debugPrint('Navigation already in progress, skipping...');
+      return;
+    }
+
     if (user == null) {
       isAuthenticated.value = false;
-      // If we're not on login page, navigate to login
-      if (Get.currentRoute != '/login') {
-        Get.offAllNamed('/login');
+      // Check if GetX navigation is ready before navigating
+      final currentRoute = Get.currentRoute;
+      debugPrint('Current route: $currentRoute, target: /login');
+
+      if (currentRoute != '/login') {
+        _isNavigating = true;
+        // Use post frame callback to ensure navigation is ready
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.context != null && Get.currentRoute != '/login') {
+            debugPrint('Navigating to /login');
+            Get.offAllNamed('/login')?.then((_) {
+                  _isNavigating = false;
+                }) ??
+                (_isNavigating = false);
+          } else {
+            _isNavigating = false;
+          }
+        });
       }
     } else {
       isAuthenticated.value = true;
-      // Don't auto-navigate on login - let LoginController handle it
-      // This allows for admin permission checking before navigation
+      // If user is authenticated and not on dashboard, navigate to dashboard
+      final currentRoute = Get.currentRoute;
+      debugPrint('Current route: $currentRoute, target: /dashboard');
+
+      if (currentRoute != '/dashboard') {
+        _isNavigating = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.context != null && Get.currentRoute != '/dashboard') {
+            debugPrint('Navigating to /dashboard');
+            Get.offAllNamed('/dashboard')?.then((_) {
+                  _isNavigating = false;
+                }) ??
+                (_isNavigating = false);
+          } else {
+            _isNavigating = false;
+          }
+        });
+      }
       debugPrint('User authenticated: ${user.email}');
     }
   }
