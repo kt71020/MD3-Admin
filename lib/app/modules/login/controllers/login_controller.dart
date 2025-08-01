@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:admin/app/constants/api_urls.dart';
+import 'package:admin/app/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -127,7 +128,6 @@ class LoginController extends GetxController {
         // Check if user is admin
         bool isAdminUser = await checkAdminUser(
           emailController.text.trim(),
-          passwordController.text,
           idToken,
         );
 
@@ -152,15 +152,19 @@ class LoginController extends GetxController {
         } else {
           // User is not an admin, sign them out and show error
           await AuthService.instance.logout();
+          // 跳轉到 login 頁面
+          Get.offAllNamed(Routes.login);
           Get.snackbar(
-            '權限不足',
-            '此帳號沒有管理員權限',
+            '登入錯誤',
+            '此帳號沒有權限登入系統',
             snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.red,
             colorText: Colors.white,
           );
         }
       } else {
+        // 跳轉到 login 頁面
+        Get.offAllNamed(Routes.login);
         Get.snackbar(
           '登入失敗',
           '請檢查您的電子郵件和密碼',
@@ -201,6 +205,8 @@ class LoginController extends GetxController {
         colorText: Colors.white,
       );
     } catch (e) {
+      // 跳轉到 login 頁面
+      Get.offAllNamed(Routes.login);
       Get.snackbar(
         '錯誤',
         '發生未知錯誤：$e',
@@ -235,9 +241,133 @@ class LoginController extends GetxController {
     return null;
   }
 
-  Future<bool> checkAdminUser(email, password, idToken) async {
+  // Google Sign In
+  Future<void> signInWithGoogle() async {
+    try {
+      isLoading.value = true;
+
+      final idToken = await AuthService.instance.signInWithGoogle();
+
+      if (idToken != null) {
+        // Check if user is admin using Firebase user email
+        final firebaseUser = _auth.currentUser;
+        if (firebaseUser?.email != null) {
+          bool isAdminUser = await checkAdminUser(
+            firebaseUser!.email!,
+            idToken,
+          );
+
+          if (isAdminUser) {
+            Get.snackbar(
+              '登入成功',
+              '歡迎使用 Google 帳號登入！',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+            );
+          } else {
+            // User is not an admin, sign them out and show error
+            await AuthService.instance.logout();
+            // 跳轉到 login 頁面
+            Get.offAllNamed(Routes.login);
+            Get.snackbar(
+              '權限不足',
+              '此帳號沒有管理員權限',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          }
+        }
+      } else {
+        Get.snackbar(
+          '登入失敗',
+          'Google 登入已取消或失敗',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      // 跳轉到 login 頁面
+      Get.offAllNamed(Routes.login);
+      Get.snackbar(
+        '錯誤',
+        'Google 登入發生錯誤：$e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Apple Sign In
+  Future<void> signInWithApple() async {
+    try {
+      isLoading.value = true;
+
+      final idToken = await AuthService.instance.signInWithApple();
+
+      if (idToken != null) {
+        // Check if user is admin using Firebase user email
+        final firebaseUser = _auth.currentUser;
+        if (firebaseUser?.email != null) {
+          bool isAdminUser = await checkAdminUser(
+            firebaseUser!.email!,
+            idToken,
+          );
+
+          if (isAdminUser) {
+            Get.snackbar(
+              '登入成功',
+              '歡迎使用 Apple ID 登入！',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+            );
+          } else {
+            // User is not an admin, sign them out and show error
+            await AuthService.instance.logout();
+            // 跳轉到 login 頁面
+            Get.offAllNamed(Routes.login);
+            Get.snackbar(
+              '登入錯誤',
+              '此帳號沒有權限登入系統',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          }
+        }
+      } else {
+        Get.snackbar(
+          '登入失敗',
+          'Apple ID 登入已取消或失敗',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      // 跳轉到 login 頁面
+      Get.offAllNamed(Routes.login);
+      Get.snackbar(
+        '錯誤',
+        'Apple ID 登入發生錯誤：$e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> checkAdminUser(String email, String idToken) async {
     // 檢查 id_token 是否為空
-    if (idToken == null || idToken.isEmpty) {
+    if (idToken.isEmpty) {
       debugPrint('ERROR: ID token is null or empty!');
       return false;
     }
@@ -262,13 +392,6 @@ class LoginController extends GetxController {
       final userName = jsonResponse['name'] ?? '';
       final userLevel = jsonResponse['level'] ?? '';
       final userAvatar = jsonResponse['photo_url'] ?? '';
-
-      debugPrint('User Email: $userEmail');
-      debugPrint('User Name: $userName');
-      debugPrint('User Level: $userLevel');
-      debugPrint('User Avatar: $userAvatar');
-      debugPrint('User UID: $uid');
-      debugPrint('User Token: $token');
 
       // Save user data to AuthService for global access
       await AuthService.instance.setUserData(
