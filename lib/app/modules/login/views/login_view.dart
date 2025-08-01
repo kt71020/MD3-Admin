@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
@@ -185,6 +186,100 @@ class LoginView extends GetView<LoginController> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // Divider with "OR" text
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.grey[400])),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            '或',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.grey[400])),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Google Sign In Button
+                    Obx(
+                      () => SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              controller.isLoading.value
+                                  ? null
+                                  : controller.signInWithGoogle,
+                          icon: const Icon(
+                            Icons
+                                .g_mobiledata, // Temporary icon, ideally use Google's actual icon
+                            color: Colors.red,
+                            size: 24,
+                          ),
+                          label: const Text(
+                            '使用 Google 帳號登入',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(color: Colors.grey[300]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            backgroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Apple Sign In Button (show on Web, iOS and macOS)
+                    if (Theme.of(context).platform == TargetPlatform.iOS ||
+                        Theme.of(context).platform == TargetPlatform.macOS ||
+                        kIsWeb)
+                      Obx(
+                        () => SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed:
+                                controller.isLoading.value
+                                    ? null
+                                    : controller.signInWithApple,
+                            icon: const Icon(
+                              Icons.apple,
+                              color: Colors.black,
+                              size: 24,
+                            ),
+                            label: const Text(
+                              '使用 Apple ID 登入',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: BorderSide(color: Colors.grey[300]!),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (Theme.of(context).platform == TargetPlatform.iOS ||
+                        Theme.of(context).platform == TargetPlatform.macOS ||
+                        kIsWeb)
+                      const SizedBox(height: 16),
 
                     // Additional links or info
                     TextButton(
