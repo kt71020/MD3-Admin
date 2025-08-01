@@ -147,13 +147,11 @@ class LoginController extends GetxController {
             colorText: Colors.white,
           );
 
-          // Let AuthService handle navigation automatically
-          // No manual navigation needed here
+          // Navigate to dashboard after successful admin login
+          Get.offAllNamed(Routes.dashboard);
         } else {
           // User is not an admin, sign them out and show error
           await AuthService.instance.logout();
-          // 跳轉到 login 頁面
-          Get.offAllNamed(Routes.login);
           Get.snackbar(
             '登入錯誤',
             '此帳號沒有權限登入系統',
@@ -164,7 +162,7 @@ class LoginController extends GetxController {
         }
       } else {
         // 跳轉到 login 頁面
-        Get.offAllNamed(Routes.login);
+        Get.offNamed(Routes.login);
         Get.snackbar(
           '登入失敗',
           '請檢查您的電子郵件和密碼',
@@ -206,7 +204,7 @@ class LoginController extends GetxController {
       );
     } catch (e) {
       // 跳轉到 login 頁面
-      Get.offAllNamed(Routes.login);
+      Get.offNamed(Routes.login);
       Get.snackbar(
         '錯誤',
         '發生未知錯誤：$e',
@@ -265,11 +263,11 @@ class LoginController extends GetxController {
               backgroundColor: Colors.green,
               colorText: Colors.white,
             );
+            // Navigate to dashboard after successful admin login
+            Get.offAllNamed(Routes.dashboard);
           } else {
             // User is not an admin, sign them out and show error
             await AuthService.instance.logout();
-            // 跳轉到 login 頁面
-            Get.offAllNamed(Routes.login);
             Get.snackbar(
               '權限不足',
               '此帳號沒有管理員權限',
@@ -289,8 +287,6 @@ class LoginController extends GetxController {
         );
       }
     } catch (e) {
-      // 跳轉到 login 頁面
-      Get.offAllNamed(Routes.login);
       Get.snackbar(
         '錯誤',
         'Google 登入發生錯誤：$e',
@@ -327,11 +323,11 @@ class LoginController extends GetxController {
               backgroundColor: Colors.green,
               colorText: Colors.white,
             );
+            // Navigate to dashboard after successful admin login
+            Get.offAllNamed(Routes.dashboard);
           } else {
             // User is not an admin, sign them out and show error
             await AuthService.instance.logout();
-            // 跳轉到 login 頁面
-            Get.offAllNamed(Routes.login);
             Get.snackbar(
               '登入錯誤',
               '此帳號沒有權限登入系統',
@@ -351,8 +347,6 @@ class LoginController extends GetxController {
         );
       }
     } catch (e) {
-      // 跳轉到 login 頁面
-      Get.offAllNamed(Routes.login);
       Get.snackbar(
         '錯誤',
         'Apple ID 登入發生錯誤：$e',

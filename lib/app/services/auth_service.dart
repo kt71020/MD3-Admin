@@ -84,32 +84,38 @@ class AuthService extends GetxService {
       }
     } else {
       isAuthenticated.value = true;
-      // If user is authenticated and not on dashboard, navigate to dashboard
-      final currentRoute = Get.currentRoute;
-      debugPrint('Current route: $currentRoute, target: /dashboard');
+      // Only navigate to dashboard if user has admin data stored
+      // This prevents automatic navigation for non-admin users
+      if (hasUserData) {
+        final currentRoute = Get.currentRoute;
+        debugPrint('Current route: $currentRoute, target: /dashboard');
 
-      if (currentRoute != '/dashboard') {
-        _isNavigating = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (Get.context != null && Get.currentRoute != '/dashboard') {
-            debugPrint('Navigating to /dashboard');
-            Get.offAllNamed('/dashboard')?.then((_) {
-                  _isNavigating = false;
-                }) ??
-                (_isNavigating = false);
-          } else {
-            _isNavigating = false;
-          }
-        });
+        if (currentRoute != '/dashboard') {
+          _isNavigating = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Get.context != null && Get.currentRoute != '/dashboard') {
+              debugPrint('Navigating to /dashboard');
+              Get.offAllNamed('/dashboard')?.then((_) {
+                    _isNavigating = false;
+                  }) ??
+                  (_isNavigating = false);
+            } else {
+              _isNavigating = false;
+            }
+          });
+        }
+      } else {
+        // User is authenticated but has no admin data - stay on current page
+        debugPrint('User authenticated but no admin data found: ${user.email}');
       }
-      debugPrint('User authenticated: ${user.email}');
     }
   }
 
-  // Get initial route based on current auth state
+  // Get initial route based on current auth state and admin permissions
   String getInitialRoute() {
     final currentUser = _auth.currentUser;
-    return currentUser != null ? '/dashboard' : '/login';
+    // Only go to dashboard if user is authenticated AND has admin data
+    return (currentUser != null && hasUserData) ? '/dashboard' : '/login';
   }
 
   // Login method - returns ID token on success, null on failure
