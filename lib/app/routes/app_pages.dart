@@ -1,19 +1,22 @@
+import 'package:admin/app/modules/emplyoee/bindings/employee_binding.dart';
+import 'package:admin/app/modules/emplyoee/views/employee_view.dart';
+import 'package:admin/app/modules/emplyoee/views/employee_edit.dart';
 import 'package:get/get.dart';
 
+import '../middlewares/auth_middleware.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
-import '../middlewares/auth_middleware.dart';
 
 part 'app_routes.dart';
 
 class AppPages {
   AppPages._();
 
-  static const initial = Routes.LOGIN;
+  static const initial = Routes.login;
 
   static final routes = [
     // 儀表板路由 - 需要認證
@@ -39,9 +42,21 @@ class AppPages {
     //   binding: UsersBinding(),
     // ),
     GetPage(
-      name: _Paths.LOGIN,
+      name: _Paths.login,
       page: () => const LoginView(),
       binding: LoginBinding(),
+    ),
+    GetPage(
+      name: _Paths.emplyoee,
+      page: () => const EmployeeView(),
+      binding: EmployeeBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.emplyoeeEdit,
+      page: () => const EmployeeEditView(),
+      binding: EmployeeBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }
