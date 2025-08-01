@@ -14,6 +14,7 @@ class DashboardView extends GetView<DashboardController> {
     NavigationItem(title: '用戶管理', icon: Icons.people, route: '/users'),
     NavigationItem(title: '訂單管理', icon: Icons.shopping_cart, route: '/orders'),
     NavigationItem(title: '產品管理', icon: Icons.inventory, route: '/products'),
+    NavigationItem(title: '員工管理', icon: Icons.inventory, route: '/emplyoee'),
     NavigationItem(title: '設定', icon: Icons.settings, route: '/settings'),
   ];
 
@@ -34,7 +35,7 @@ class DashboardView extends GetView<DashboardController> {
         return AlertDialog(
           title: const Row(
             children: [
-              Icon(Icons.logout, color: Colors.red),
+              Icon(Icons.logout, color: Colors.pinkAccent),
               SizedBox(width: 8),
               Text('確認登出'),
             ],
@@ -51,7 +52,7 @@ class DashboardView extends GetView<DashboardController> {
                 controller.logout();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
               ),
               child: const Text('登出'),
@@ -237,19 +238,18 @@ class DashboardView extends GetView<DashboardController> {
       },
     ];
 
-    return ResponsiveGrid(
-      mobileColumns: 1,
-      tabletColumns: 2,
-      desktopColumns: 4,
+    return ResponsiveRow(
       children:
           stats
               .map(
-                (stat) => _buildStatCard(
-                  context,
-                  title: stat['title'] as String,
-                  value: stat['value'] as String,
-                  icon: stat['icon'] as IconData,
-                  color: stat['color'] as Color,
+                (stat) => Expanded(
+                  child: _buildStatCard(
+                    context,
+                    title: stat['title'] as String,
+                    value: stat['value'] as String,
+                    icon: stat['icon'] as IconData,
+                    color: stat['color'] as Color,
+                  ),
                 ),
               )
               .toList(),
