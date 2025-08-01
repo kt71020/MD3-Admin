@@ -86,9 +86,14 @@ class ApiUrls {
     }
   }
 
-  // === 位置：/api/v1/user ===
+  // === 位置：/api/v2/adm/user ===
   static const String loginCheckAPI =
       '/api/v2/adm/user/login_check'; // 檢查帳號是否存在
+  static const String getEmployeeListAPI =
+      '/api/v2/adm/user/get_employee_list'; // 取得員工列表
+  static const String addEmployeeAPI = '/api/v2/adm/user/add_employee'; // 新增員工
+  static const String editEmployeeAPI =
+      '/api/v2/adm/user/edit_employee'; // 編輯員工資料
 
   // 取得完整 API URL
   static String getFullUrl(String endpoint) {
