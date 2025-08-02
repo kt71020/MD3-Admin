@@ -9,6 +9,11 @@ class AppNavigation {
   /// 主要導航項目列表
   static final List<NavigationItem> mainNavigationItems = [
     NavigationItem(title: '儀表板', icon: Icons.dashboard, route: '/dashboard'),
+    NavigationItem(
+      title: '進件管理',
+      icon: Icons.app_registration,
+      route: '/application',
+    ),
     NavigationItem(title: '用戶管理', icon: Icons.people, route: '/users'),
     NavigationItem(title: '訂單管理', icon: Icons.shopping_cart, route: '/orders'),
     NavigationItem(title: '產品管理', icon: Icons.inventory, route: '/products'),
