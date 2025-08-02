@@ -84,7 +84,11 @@ class EmployeeView extends GetView<EmployeeController> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => controller.fetchEmployeeList(),
+                onPressed:
+                    () => controller.fetchEmployeeList(
+                      controller.page.value,
+                      controller.limit.value,
+                    ),
                 child: const Text('重新載入'),
               ),
             ],
@@ -264,6 +268,9 @@ class EmployeeView extends GetView<EmployeeController> {
                       .toList(),
             ),
           ),
+          const SizedBox(height: 20),
+          // 分頁導覽
+          _buildPaginationControls(context),
         ],
       ),
     );
@@ -348,6 +355,132 @@ class EmployeeView extends GetView<EmployeeController> {
           ),
         ),
       ],
+    );
+  }
+
+  /// 建立分頁導覽控制項
+  Widget _buildPaginationControls(BuildContext context) {
+    return Obx(() {
+      if (controller.totalPages.value <= 1) {
+        return const SizedBox.shrink();
+      }
+
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 上一頁按鈕
+          _buildPaginationButton(
+            context,
+            '上一頁',
+            controller.hasPreviousPage,
+            () => controller.previousPage(),
+          ),
+          const SizedBox(width: 8),
+
+          // 頁碼按鈕
+          ...controller.getPaginationRange().map((pageNum) {
+            if (pageNum == -1) {
+              // 省略號
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                child: const Text('...', style: TextStyle(fontSize: 16)),
+              );
+            }
+
+            return _buildPageNumberButton(context, pageNum);
+          }),
+
+          const SizedBox(width: 8),
+          // 下一頁按鈕
+          _buildPaginationButton(
+            context,
+            '下一頁',
+            controller.hasNextPage,
+            () => controller.nextPage(),
+          ),
+        ],
+      );
+    });
+  }
+
+  /// 建立分頁按鈕
+  Widget _buildPaginationButton(
+    BuildContext context,
+    String text,
+    bool enabled,
+    VoidCallback onPressed,
+  ) {
+    return ElevatedButton(
+      onPressed: enabled ? onPressed : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            enabled
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.surface,
+        foregroundColor:
+            enabled
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
+        padding:
+            context.isMobile
+                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+                : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        minimumSize: const Size(60, 36),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: context.isMobile ? 12 : 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// 建立頁碼按鈕
+  Widget _buildPageNumberButton(BuildContext context, int pageNum) {
+    final isCurrentPage = controller.page.value == pageNum;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      child: InkWell(
+        onTap: () => controller.goToPage(pageNum),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: context.isMobile ? 32 : 40,
+          height: context.isMobile ? 32 : 40,
+          decoration: BoxDecoration(
+            color:
+                isCurrentPage
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color:
+                  isCurrentPage
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              pageNum.toString(),
+              style: TextStyle(
+                color:
+                    isCurrentPage
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurface,
+                fontSize: context.isMobile ? 12 : 14,
+                fontWeight: isCurrentPage ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

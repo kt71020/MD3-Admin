@@ -534,7 +534,10 @@ class EmployeeEditView extends GetView<EmployeeController> {
       );
 
       // 新增成功後重新載入列表並返回
-      controller.fetchEmployeeList();
+      controller.fetchEmployeeList(
+        controller.page.value,
+        controller.limit.value,
+      );
       Get.back();
     } else {
       Get.snackbar(
@@ -599,7 +602,7 @@ class EmployeeEditView extends GetView<EmployeeController> {
     );
 
     // 編輯成功後重新載入列表並返回
-    controller.fetchEmployeeList();
+    controller.fetchEmployeeList(controller.page.value, controller.limit.value);
     Get.back();
   }
 }
