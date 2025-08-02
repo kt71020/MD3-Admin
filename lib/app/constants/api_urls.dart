@@ -94,6 +94,8 @@ class ApiUrls {
   static const String addEmployeeAPI = '/api/v2/adm/user/add_employee'; // 新增員工
   static const String editEmployeeAPI =
       '/api/v2/adm/user/edit_employee'; // 編輯員工資料
+  // === 位置：/api/v2/adm/shop ===
+  static const String uploadAddShopAPI = '/api/v1/upload/add_shop'; // 上傳檔案新增商店
 
   // 取得完整 API URL
   static String getFullUrl(String endpoint) {
