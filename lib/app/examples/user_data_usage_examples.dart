@@ -153,7 +153,7 @@ class UserDataUsageExamples {
     return {
       'Content-Type': 'application/json',
       if (authService.currentToken.isNotEmpty)
-        'Authorization': authService.currentToken,
+        'Authorization': 'Bearer ${authService.currentToken}',
     };
   }
 

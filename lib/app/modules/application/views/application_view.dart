@@ -227,7 +227,7 @@ class ApplicationView extends GetView<ApplicationController> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Get.toNamed(Routes.applicationAdd);
+                    Get.toNamed(Routes.applicationRequest);
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

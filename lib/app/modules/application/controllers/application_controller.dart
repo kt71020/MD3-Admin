@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin/app/services/auth_service.dart';
 import 'package:file_picker/file_picker.dart';
@@ -321,7 +322,13 @@ class ApplicationController extends GetxController {
 
       // 加入 Authorization 欄位
       final authService = AuthService.instance;
-      request.headers['Authorization'] = authService.currentToken;
+
+      // 檢查 JWT token 是否存在
+      if (authService.currentToken.isEmpty) {
+        throw Exception('JWT Token 不存在，請重新登入');
+      }
+
+      request.headers['Authorization'] = 'Bearer ${authService.currentToken}';
 
       // 加入用戶 ID（如果需要）
       request.fields['uid'] = authService.currentUid;
@@ -378,7 +385,7 @@ class ApplicationController extends GetxController {
           sid = responseData['data']['upload_shop']['sid'].toString();
         }
 
-        print('✅ 商店新增成功 - SID: $sid, 狀態: $status');
+        debugPrint('✅ 商店新增成功 - SID: $sid, 狀態: $status');
 
         if (status == 1) {
           // 成功
@@ -405,8 +412,15 @@ class ApplicationController extends GetxController {
         throw Exception('API 請求失敗：HTTP ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ 嘗試第 $attemptNumber 次上傳失敗：$e');
+      debugPrint('❌ 嘗試第 $attemptNumber 次上傳失敗：$e');
       return {'success': false, 'error': e.toString()};
     }
+  }
+
+  /// 取得進件資料列表
+  Future<Map<String, dynamic>> getApplicationList() async {
+    final apiUrl = ApiUrls.getFullUrl(ApiUrls.getApplicationListAPI);
+    final response = await http.get(Uri.parse(apiUrl));
+    return json.decode(response.body);
   }
 }

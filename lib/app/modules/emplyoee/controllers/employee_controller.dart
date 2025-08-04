@@ -31,9 +31,18 @@ class EmployeeController extends GetxController {
       errorMessage.value = '';
 
       final authService = AuthService.instance;
+
+      // 檢查 JWT token 是否存在
+      if (authService.currentToken.isEmpty) {
+        hasError.value = true;
+        errorMessage.value = 'JWT Token 不存在，請重新登入';
+        isLoading.value = false;
+        return false;
+      }
+
       final headers = {
         'Content-Type': 'application/json',
-        'Authorization': authService.currentToken,
+        'Authorization': 'Bearer ${authService.currentToken}',
       };
       final body = {
         "uid": authService.currentUid,
@@ -89,9 +98,20 @@ class EmployeeController extends GetxController {
     final authService = AuthService.instance;
     debugPrint('addEmployee: $name, $email, $level, $status, $employeeId');
     try {
+      // 檢查 JWT token 是否存在
+      if (authService.currentToken.isEmpty) {
+        Get.snackbar(
+          '錯誤',
+          'JWT Token 不存在，請重新登入',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+
       final headers = {
         'Content-Type': 'application/json',
-        'Authorization': authService.currentToken,
+        'Authorization': 'Bearer ${authService.currentToken}',
       };
       final body = {
         "uid": authService.currentUid,
@@ -147,9 +167,20 @@ class EmployeeController extends GetxController {
     final authService = AuthService.instance;
     debugPrint('editEmployee: $name, $email, $level, $status, $employeeId');
     try {
+      // 檢查 JWT token 是否存在
+      if (authService.currentToken.isEmpty) {
+        Get.snackbar(
+          '錯誤',
+          'JWT Token 不存在，請重新登入',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+
       final headers = {
         'Content-Type': 'application/json',
-        'Authorization': authService.currentToken,
+        'Authorization': 'Bearer ${authService.currentToken}',
       };
       final body = {
         "uid": authService.currentUid,
