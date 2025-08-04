@@ -14,6 +14,10 @@ abstract class Routes {
   static const login = _Paths.login;
   static const emplyoee = _Paths.emplyoee;
   static const emplyoeeEdit = _Paths.emplyoeeEdit;
+  static const application = _Paths.application;
+  static const SHOP = _Paths.SHOP;
+  static const applicationAdd = _Paths.applicationAdd;
+  static const applicationRequest = _Paths.applicationRequest;
 }
 
 abstract class _Paths {
@@ -27,4 +31,8 @@ abstract class _Paths {
   static const login = '/login';
   static const emplyoee = '/emplyoee';
   static const emplyoeeEdit = '/emplyoee/edit/:email';
+  static const application = '/application';
+  static const SHOP = '/shop';
+  static const applicationAdd = '/application/add';
+  static const applicationRequest = '/application/request';
 }
