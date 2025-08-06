@@ -1,3 +1,4 @@
+import 'package:admin/app/models/application/application_log_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin/app/services/auth_service.dart';
@@ -35,6 +36,11 @@ class ApplicationController extends GetxController {
   final applicationModel = Rxn<ApplicationModel>();
   final applicationList = <Application>[].obs;
 
+  // 案件歷程紀錄
+  final applicationLogModel = Rxn<ApplicationLogModel>();
+  final applicationLogList = <ApplicationLog>[].obs;
+  final totalLogItems = 0.obs;
+
   // 編輯中的申請資料
   final editingApplication = Rxn<Application>();
   final hasUnsavedChanges = false.obs;
@@ -48,7 +54,7 @@ class ApplicationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getApplicationList();
+    // getApplicationList();
   }
 
   @override
@@ -1294,5 +1300,51 @@ class ApplicationController extends GetxController {
     isLoading.value = false;
     hasUnsavedChanges.value = false;
     debugPrint('🧹 已清除所有狀態');
+  }
+
+  /// ==========================================
+  /// 取得進件資料列表
+  /// ==========================================
+  Future<ApplicationLogModel?> getApplicationLogList(
+    int id,
+    String type,
+  ) async {
+    // 初始化觀察變數
+    applicationLogModel.value = ApplicationLogModel(
+      status: 0,
+      message: '',
+      count: 0,
+      applicationLog: [],
+    );
+    applicationLogList.value = [];
+    totalLogItems.value = 0;
+
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.getApplicationLogList(id, type);
+
+      if (result.isSuccess) {
+        // 將 API 回應轉換成 ApplicationModel
+        final model = ApplicationLogModel.fromJson(result.data!);
+        debugPrint('🔄 取得案件列表成功：${model.applicationLog.length} 筆');
+        // 更新觀察變數
+        applicationLogModel.value = model;
+        applicationLogList.value = model.applicationLog;
+        totalLogItems.value = model.count;
+
+        return model;
+      } else {
+        _handleError(result.error ?? '取得案件列表失敗');
+        return null;
+      }
+    } catch (e) {
+      _handleError('取得案件列表時發生錯誤：$e');
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

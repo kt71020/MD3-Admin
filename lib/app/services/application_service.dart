@@ -24,6 +24,25 @@ class ApplicationService {
     return await _apiService.post(ApiUrls.getApplicationListAPI);
   }
 
+  /// 取得案件歷程紀錄
+  Future<ApiResult<Map<String, dynamic>>> getApplicationLogList(
+    int id,
+    String type,
+  ) async {
+    final requestBody = {"id": id, "type": type};
+
+    final result = await _apiService.post(
+      ApiUrls.applicationLogAPI,
+      data: requestBody,
+    );
+
+    if (result.isSuccess) {
+      return ApiResult.success(result.data);
+    } else {
+      return ApiResult.error(result.error ?? '取得案件歷程紀錄失敗');
+    }
+  }
+
   /// 審核案件：拒絕
   Future<ApiResult<bool>> applicationReject({
     required int applicationId,

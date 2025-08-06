@@ -109,19 +109,39 @@ application_edit.dart
   申請書狀態:
   **Table 3 圖檔**
   圖檔:image_url
+  **Table 4 備註**
+  備註:remarl
+  **Table 5 歷程紀錄 **
+  內容:log_content 姓名: log_name 時間 : log_date
 
 - 畫面呈現
   Row[
   Column[
   Table 1,
   Tbale 2
-
-      ],
-          Column[
-          Table 3
-      ],
+  ],
+  Column[
+  Table 3
+  Table 4
+  Table 5
+  ],
 
   ]
+
+**Table 4** 說明
+
+- Table 4 於 status= 0,4 顯示。
+- 提供 TextField(log_content) 輸入，最多 3 行。
+- 提供一個下拉選單，提供預先準備的備註說明，讓使用者選擇，選擇後添加到 log_content。
+  - 預先準備說明依照 status 而定。
+    - status=0, [圖片不法辨識,資料不完整,商店已經存在,拒絕申請,接受申請]
+    - status=4, [資料有誤,案件完成]
+
+**Table 5** 說明
+
+- 顯示歷程紀錄(logList)
+- 內容: content 姓名: name 時間 : createAt
+- controller.getApplicationLogList(id,'1') 取得列表
 
 **編輯模式**
 

@@ -67,7 +67,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           children: [
             // 主要內容區域
             _buildMainContent(context, application, isEditMode),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             // 操作按鈕區域
             _buildActionButtons(context, application, isEditMode),
           ],
@@ -92,13 +92,13 @@ class ApplicationEdit extends GetView<ApplicationController> {
             children: [
               // Table 1: 基本資料
               _buildBasicInfoTable(context, application, isEditMode),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               // Table 2: 審核結果
               _buildReviewInfoTable(context, application, isEditMode),
             ],
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         // 右側：圖檔
         Expanded(flex: 1, child: _buildImageTable(context, application)),
       ],
@@ -118,11 +118,11 @@ class ApplicationEdit extends GetView<ApplicationController> {
           Text(
             '基本資料',
             style: TextStyle(
-              fontSize: ResponsiveUtils.responsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.responsiveFontSize(context, 15),
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
           // 所有狀態都使用 TextField，根據 status=1 決定是否可編輯
           _buildUnifiedBasicForm(context, application),
@@ -148,7 +148,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 enabled: false, // 申請序號永遠不可編輯
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildResponsiveFormField(
                 label: '商店名稱',
@@ -158,7 +158,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 canEdit: canEdit,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildResponsiveFormField(
                 label: '統一編號',
@@ -170,7 +170,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
         // 第二行：訂購電話、聯絡人、行動電話 (3個欄位)
         Row(
@@ -184,7 +184,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 canEdit: canEdit,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildResponsiveFormField(
                 label: '聯絡人',
@@ -194,7 +194,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 canEdit: canEdit,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildResponsiveFormField(
                 label: '行動電話',
@@ -206,7 +206,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
         // 第三行：網站、電子郵件 (2個欄位)
         Row(
@@ -220,7 +220,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 canEdit: canEdit,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildResponsiveFormField(
                 label: '電子郵件',
@@ -232,7 +232,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
         // 第四行：地址 (1個欄位，全寬)
         _buildResponsiveFormField(
@@ -242,7 +242,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           getValue: (app) => app.shopAddress,
           canEdit: canEdit,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
         // 第五行：商店描述 (1個欄位，多行文字)
         _buildResponsiveFormField(
@@ -253,7 +253,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           canEdit: canEdit,
           maxLines: 1,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
         // 第六行：訂購附註 (1個欄位，多行文字)
         _buildResponsiveFormField(
@@ -271,9 +271,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
             if (controller.hasUnsavedChanges.value) {
               return Column(
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
                       borderRadius: BorderRadius.circular(8),
@@ -316,25 +316,50 @@ class ApplicationEdit extends GetView<ApplicationController> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
+
         TextFormField(
           key: ValueKey('readonly_${label}_$value'),
           initialValue: value,
           readOnly: true, // 設定為只讀
           maxLines: maxLines,
           decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
+            border: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 2),
+              borderRadius: BorderRadius.circular(8),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            isDense: true,
             filled: true,
-            fillColor: Colors.grey.shade50, // 淺灰色背景表示只讀
+            fillColor: Colors.green.shade50, // 改為淺綠色背景更明顯
           ),
           style: const TextStyle(
-            color: Colors.black87, // 確保文字清晰可讀
+            color: Colors.black, // 確保文字清晰可讀
           ),
         ),
       ],
@@ -354,9 +379,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         TextFormField(
           key: ValueKey('unified_${label}_$value'),
           initialValue: value,
@@ -364,18 +389,35 @@ class ApplicationEdit extends GetView<ApplicationController> {
           maxLines: maxLines,
           onChanged: onChanged,
           decoration: InputDecoration(
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black54, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 8,
-              vertical: 1,
+              vertical: 6,
             ),
+            isDense: true,
             // 統一背景色：可編輯時白色，不可編輯時淺灰色
             filled: !enabled,
             fillColor: !enabled ? Colors.grey.shade100 : null,
           ),
           style: TextStyle(
             // 統一文字色：可編輯時黑色，不可編輯時灰色
-            color: enabled ? Colors.black87 : Colors.grey.shade600,
+            color: enabled ? Colors.blueGrey : Colors.black,
+            fontWeight: enabled ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ],
@@ -432,11 +474,11 @@ class ApplicationEdit extends GetView<ApplicationController> {
           Text(
             '審核結果',
             style: TextStyle(
-              fontSize: ResponsiveUtils.responsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.responsiveFontSize(context, 15),
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           _buildReadOnlyReviewForm(context, application),
         ],
       ),
@@ -459,14 +501,14 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 value: application.reviewByName ?? '-',
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildReadOnlyFormField(
                 label: '審核結果',
                 value: _getReviewStatusText(application.reviewStatus),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildReadOnlyFormField(
                 label: '審核時間',
@@ -475,7 +517,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // 第二行：審核附註 (1個欄位，全寬)
         _buildReadOnlyFormField(
@@ -483,7 +525,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           value: application.reviewNote ?? '-',
           maxLines: 1,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // 第三行：結案人姓名、是否結案、結案時間 (3個欄位)
         Row(
@@ -494,14 +536,14 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 value: application.closeByName ?? '-',
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildReadOnlyFormField(
                 label: '是否結案',
                 value: application.isClose ? '是' : '否',
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildReadOnlyFormField(
                 label: '結案時間',
@@ -510,7 +552,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // 第四行：申請書狀態 (1個欄位，全寬)
         _buildReadOnlyFormField(
@@ -530,11 +572,11 @@ class ApplicationEdit extends GetView<ApplicationController> {
           Text(
             '圖檔',
             style: TextStyle(
-              fontSize: ResponsiveUtils.responsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.responsiveFontSize(context, 15),
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
 
           if (application.imageUrl.isNotEmpty) ...[
             // 顯示圖片 URL
@@ -586,7 +628,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
               onTap: () => _showImageDialog(context, application.imageUrl),
               child: Container(
                 width: double.infinity,
-                height: 300,
+                height: 250,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(8),
@@ -598,7 +640,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                       child: _buildProxyImage(
                         application.imageUrl,
                         width: double.infinity,
-                        height: 300,
+                        height: 250,
                       ),
                     ),
                     // 放大鏡指示
@@ -655,7 +697,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           ] else
             Container(
               width: double.infinity,
-              height: 300,
+              height: 250,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(8),
@@ -820,9 +862,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
               children: [
                 Text('案件編號：${application.id}'),
                 Text('商店名稱：${application.shopName}'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 const Text('審核附註：'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 TextField(
                   controller: noteController,
                   maxLines: 3,
@@ -873,9 +915,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
               children: [
                 Text('案件編號：${application.id}'),
                 Text('商店名稱：${application.shopName}'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 const Text('退回原因：'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 TextField(
                   controller: noteController,
                   maxLines: 3,
@@ -1059,7 +1101,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 if (loadingProgress.expectedTotalBytes != null) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%',
                     style: TextStyle(
@@ -1104,13 +1146,13 @@ class ApplicationEdit extends GetView<ApplicationController> {
                       fontSize: 16,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     'Proxy Server 可能無法存取此圖片',
                     style: TextStyle(color: Colors.red.shade600, fontSize: 12),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

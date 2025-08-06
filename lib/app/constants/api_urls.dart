@@ -75,6 +75,8 @@ class ApiUrls {
       _applicationEndpoints['caseReviewFailed']!;
   static String get applicationCaseCloseAPI =>
       _applicationEndpoints['caseClose']!;
+  static String get applicationLogAPI =>
+      _applicationEndpoints['applicationLog']!;
 
   // 私有 endpoints 定義
   static const _userEndpoints = {
@@ -94,6 +96,7 @@ class ApiUrls {
     'approve': '/api/v2/adm/application/accept',
     'caseReviewFailed': '/api/v2/adm/application/case_review_failed',
     'caseClose': '/api/v2/adm/application/case_close',
+    'applicationLog': '/api/v2/adm/application/get_application_log_list',
   };
 
   // === Helper Methods ===
