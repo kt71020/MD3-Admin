@@ -69,6 +69,12 @@ class ApiUrls {
   static String get getApplicationListAPI => _applicationEndpoints['getList']!;
   static String get isReviewedAPI => _applicationEndpoints['isReviewed']!;
   static String get updateApplicationAPI => _applicationEndpoints['update']!;
+  static String get applicationRejectAPI => _applicationEndpoints['reject']!;
+  static String get applicationApproveAPI => _applicationEndpoints['approve']!;
+  static String get caseReviewFailedAPI =>
+      _applicationEndpoints['caseReviewFailed']!;
+  static String get applicationCaseCloseAPI =>
+      _applicationEndpoints['caseClose']!;
 
   // 私有 endpoints 定義
   static const _userEndpoints = {
@@ -84,6 +90,10 @@ class ApiUrls {
     'getList': '/api/v2/adm/application/get_list',
     'isReviewed': '/api/v2/adm/application/is_reviewed',
     'update': '/api/v2/adm/application/update',
+    'reject': '/api/v2/adm/application/reject',
+    'approve': '/api/v2/adm/application/accept',
+    'caseReviewFailed': '/api/v2/adm/application/case_review_failed',
+    'caseClose': '/api/v2/adm/application/case_close',
   };
 
   // === Helper Methods ===

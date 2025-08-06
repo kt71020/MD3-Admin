@@ -18,6 +18,7 @@ abstract class Routes {
   static const SHOP = _Paths.SHOP;
   static const applicationAdd = _Paths.applicationAdd;
   static const applicationRequest = _Paths.applicationRequest;
+  static const applicationEdit = _Paths.applicationEdit;
 }
 
 abstract class _Paths {
@@ -35,4 +36,5 @@ abstract class _Paths {
   static const SHOP = '/shop';
   static const applicationAdd = '/application/add';
   static const applicationRequest = '/application/request';
+  static const applicationEdit = '/application/edit';
 }

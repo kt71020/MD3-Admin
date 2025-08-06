@@ -1,5 +1,6 @@
 import 'package:admin/app/modules/application/views/application_add.dart';
 import 'package:admin/app/modules/application/views/application_request.dart';
+import 'package:admin/app/modules/application/views/application_edit.dart';
 import 'package:get/get.dart';
 
 import '../middlewares/auth_middleware.dart';
@@ -85,6 +86,12 @@ class AppPages {
     GetPage(
       name: _Paths.applicationRequest,
       page: () => const ApplicationRequest(),
+      binding: ApplicationBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.applicationEdit,
+      page: () => const ApplicationEdit(),
       binding: ApplicationBinding(),
       middlewares: [AuthMiddleware()],
     ),

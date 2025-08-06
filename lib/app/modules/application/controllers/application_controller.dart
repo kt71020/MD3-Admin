@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin/app/services/auth_service.dart';
+import 'package:admin/app/services/application_service.dart';
+import '../../../models/application/application_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'dart:io';
@@ -11,6 +13,9 @@ import 'package:http_parser/http_parser.dart';
 import '../../../constants/api_urls.dart';
 
 class ApplicationController extends GetxController {
+  // 服務實例
+  final _applicationService = ApplicationService.instance;
+
   // 基本狀態管理
   final isLoading = false.obs;
   final hasError = false.obs;
@@ -26,14 +31,38 @@ class ApplicationController extends GetxController {
   final uploadResult = Rxn<Map<String, dynamic>>();
   final rawCsvContent = ''.obs; // 存儲原始 CSV 內容
 
+  // 申請資料
+  final applicationModel = Rxn<ApplicationModel>();
+  final applicationList = <Application>[].obs;
+
+  // 編輯中的申請資料
+  final editingApplication = Rxn<Application>();
+  final hasUnsavedChanges = false.obs;
+
+  // 分頁相關
+  final currentPage = 1.obs;
+  final itemsPerPage = 30.obs;
+  final totalItems = 0.obs;
+  final pageOptions = [5, 30, 50, 100].obs;
+
   @override
   void onInit() {
     super.onInit();
+    getApplicationList();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // 每次頁面準備就緒時清除錯誤狀態
+    clearErrorState();
   }
 
   @override
   void onClose() {
     super.onClose();
+    applicationList.clear();
+    applicationModel.value = null;
   }
 
   /// 選取並上傳 CSV 檔案
@@ -95,30 +124,30 @@ class ApplicationController extends GetxController {
   /// 處理多段式配置檔案內容
   Future<void> _processCsvContent(String csvContent) async {
     try {
-      print('📊 開始解析多段式配置檔案...');
+      debugPrint('📊 開始解析多段式配置檔案...');
 
       // 檢查檔案基本信息
       final lines = csvContent.split('\n');
-      print('檔案總行數：${lines.length}');
-      print('檔案總字符數：${csvContent.length}');
+      debugPrint('檔案總行數：${lines.length}');
+      debugPrint('檔案總字符數：${csvContent.length}');
 
       // 分段解析
       final sections = _parseConfigSections(lines);
 
-      print('\n📋 檔案結構分析：');
-      print('發現 ${sections.length} 個配置區段');
+      debugPrint('\n📋 檔案結構分析：');
+      debugPrint('發現 ${sections.length} 個配置區段');
 
       for (final section in sections) {
-        print('\n📦 區段：${section['title']}');
-        print('   行數：${section['data'].length}');
+        debugPrint('\n📦 區段：${section['title']}');
+        debugPrint('   行數：${section['data'].length}');
         if (section['data'].isNotEmpty && section['data'].first is List) {
-          print('   欄位數：${(section['data'].first as List).length}');
+          debugPrint('   欄位數：${(section['data'].first as List).length}');
         }
 
         // 顯示前3行數據
         final data = section['data'] as List<List<dynamic>>;
         for (int i = 0; i < data.length && i < 3; i++) {
-          print('   第 ${i + 1} 行：${data[i]}');
+          debugPrint('   第 ${i + 1} 行：${data[i]}');
         }
       }
 
@@ -128,10 +157,10 @@ class ApplicationController extends GetxController {
               .expand((section) => section['data'] as List<List<dynamic>>)
               .toList();
 
-      print('\n✅ 成功解析多段式配置檔案');
+      debugPrint('\n✅ 成功解析多段式配置檔案');
     } catch (e) {
-      print('❌ 配置檔案解析錯誤：$e');
-      print('錯誤詳情：${e.toString()}');
+      debugPrint('❌ 配置檔案解析錯誤：$e');
+      debugPrint('錯誤詳情：${e.toString()}');
       throw Exception('配置檔案格式錯誤：$e');
     }
   }
@@ -216,6 +245,7 @@ class ApplicationController extends GetxController {
     isApiUploading.value = false; // 重置上傳狀態
   }
 
+  /// ==========================================
   /// 正確解碼位元組為 UTF-8 字串，處理 BOM 和換行符號
   String _decodeBytes(Uint8List bytes) {
     // 檢查並移除 UTF-8 BOM (0xEF, 0xBB, 0xBF)
@@ -244,12 +274,14 @@ class ApplicationController extends GetxController {
     decoded = decoded.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
 
     final lineCount = decoded.split('\n').length;
-    print('檔案換行符號標準化完成，共 $lineCount 行');
+    debugPrint('檔案換行符號標準化完成，共 $lineCount 行');
 
     return decoded;
   }
 
+  /// ==========================================
   /// 上傳商店資料到後端 API
+  /// ==========================================
   Future<Map<String, dynamic>> uploadAddShop() async {
     try {
       // 嘗試不同的檔案欄位名稱
@@ -268,7 +300,7 @@ class ApplicationController extends GetxController {
         if (attempt < fileFieldNames.length - 1 &&
             result['error'] != null &&
             result['error'].toString().contains('未上傳任何檔案')) {
-          print('⚠️  嘗試 ${fileFieldNames[attempt]} 欄位失敗，嘗試下一個欄位名稱...');
+          debugPrint('⚠️  嘗試 ${fileFieldNames[attempt]} 欄位失敗，嘗試下一個欄位名稱...');
           continue;
         }
 
@@ -296,7 +328,9 @@ class ApplicationController extends GetxController {
     }
   }
 
+  /// ==========================================
   /// 嘗試使用指定的檔案欄位名稱上傳
+  /// ==========================================
   Future<Map<String, dynamic>> _attemptUpload(
     String fileFieldName,
     int attemptNumber,
@@ -306,7 +340,7 @@ class ApplicationController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
 
-      print('🚀 嘗試第 $attemptNumber 次上傳（欄位名稱：$fileFieldName）');
+      debugPrint('🚀 嘗試第 $attemptNumber 次上傳（欄位名稱：$fileFieldName）');
 
       // 檢查是否有 CSV 內容
       if (rawCsvContent.value.isEmpty) {
@@ -315,7 +349,7 @@ class ApplicationController extends GetxController {
 
       // 準備 API 請求
       final apiUrl = ApiUrls.getFullUrl(ApiUrls.uploadAddShopAPI);
-      print('API URL: $apiUrl');
+      debugPrint('API URL: $apiUrl');
 
       // 建立 multipart 請求
       final request = http.MultipartRequest('POST', Uri.parse(apiUrl));
@@ -353,15 +387,15 @@ class ApplicationController extends GetxController {
       request.fields['file_type'] = 'csv';
       request.fields['upload_type'] = 'shop_data';
 
-      print('📁 上傳檔案：$filename (${csvBytes.length} bytes)');
+      debugPrint('📁 上傳檔案：$filename (${csvBytes.length} bytes)');
 
       // 發送請求
-      print('📤 發送 API 請求...');
+      debugPrint('📤 發送 API 請求...');
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      print('📨 API 回應狀態碼: ${response.statusCode}');
-      print('📨 API 回應內容: ${response.body}');
+      debugPrint('📨 API 回應狀態碼: ${response.statusCode}');
+      debugPrint('📨 API 回應內容: ${response.body}');
 
       // 處理回應
       if (response.statusCode == 200) {
@@ -417,10 +451,848 @@ class ApplicationController extends GetxController {
     }
   }
 
+  /// ==========================================
   /// 取得進件資料列表
-  Future<Map<String, dynamic>> getApplicationList() async {
-    final apiUrl = ApiUrls.getFullUrl(ApiUrls.getApplicationListAPI);
-    final response = await http.get(Uri.parse(apiUrl));
-    return json.decode(response.body);
+  /// ==========================================
+  Future<ApplicationModel?> getApplicationList() async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.getApplicationList();
+
+      if (result.isSuccess) {
+        // 將 API 回應轉換成 ApplicationModel
+        final model = ApplicationModel.fromJson(result.data!);
+        debugPrint('🔄 取得案件列表成功：${model.data.length} 筆');
+        // 更新觀察變數
+        applicationModel.value = model;
+        applicationList.value = model.data;
+        totalItems.value = model.count;
+
+        return model;
+      } else {
+        _handleError(result.error ?? '取得案件列表失敗');
+        return null;
+      }
+    } catch (e) {
+      _handleError('取得案件列表時發生錯誤：$e');
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 案件審核結果：拒絕
+  /// ==========================================
+  Future<bool> reject(int applicationId, String reviewNote) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.applicationReject(
+        applicationId: applicationId,
+        reviewNote: reviewNote,
+      );
+
+      if (result.isSuccess) {
+        Get.snackbar(
+          '✅ 拒絕成功',
+          '案件 #$applicationId 已被拒絕',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Get.theme.colorScheme.errorContainer,
+          colorText: Get.theme.colorScheme.onErrorContainer,
+        );
+        return true;
+      } else {
+        _handleError(result.error ?? '拒絕案件失敗');
+        return false;
+      }
+    } catch (e) {
+      _handleError('拒絕案件時發生錯誤：$e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 案件審核結果：通過
+  /// ==========================================
+  Future<bool> approve(int applicationId, String reviewNote) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.applicationApprove(
+        applicationId: applicationId,
+        reviewNote: reviewNote,
+      );
+
+      if (result.isSuccess) {
+        Get.snackbar(
+          '✅ 批准成功',
+          '案件 #$applicationId 已被批准',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Get.theme.colorScheme.primaryContainer,
+          colorText: Get.theme.colorScheme.onPrimaryContainer,
+        );
+        return true;
+      } else {
+        _handleError(result.error ?? '批准案件失敗');
+        return false;
+      }
+    } catch (e) {
+      _handleError('批准案件時發生錯誤：$e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 檢查案件是否已審核
+  /// ==========================================
+  Future<bool> isApplicationReviewed(int applicationId) async {
+    try {
+      final result = await _applicationService.isApplicationReviewed(
+        applicationId,
+      );
+
+      if (result.isSuccess) {
+        return true;
+      } else {
+        _handleError(result.error ?? '檢查審核狀態失敗');
+        return false;
+      }
+    } catch (e) {
+      _handleError('檢查審核狀態時發生錯誤：$e');
+      return false;
+    }
+  }
+
+  /// 統一錯誤處理
+  void _handleError(String error) {
+    hasError.value = true;
+    errorMessage.value = error;
+    Get.snackbar(
+      '❌ 錯誤',
+      error,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Get.theme.colorScheme.errorContainer,
+      colorText: Get.theme.colorScheme.onErrorContainer,
+    );
+  }
+
+  /// ==========================================
+  /// 選擇CSV檔案並呼叫API上傳與新增商店
+  /// 整合 pickAndUploadCSVFile() 與 uploadAddShop() 的功能
+  /// 讓使用者選擇檔案後直接進行商店新增程序
+  /// ==========================================
+  Future<bool> uploadCSVAndAddShop() async {
+    try {
+      // 第一步：選擇並解析CSV檔案
+      debugPrint('🔄 開始選擇CSV檔案...');
+      await _pickCSVFileForUpload();
+
+      // 檢查是否成功選擇檔案
+      if (rawCsvContent.value.isEmpty || selectedFileName.value.isEmpty) {
+        throw Exception('未選擇檔案或檔案內容為空');
+      }
+
+      debugPrint('✅ 檔案選擇完成：${selectedFileName.value}');
+
+      // 第二步：直接上傳到API進行商店新增
+      debugPrint('🚀 開始上傳檔案並新增商店...');
+      final result = await uploadAddShop();
+
+      if (result['success'] == true) {
+        debugPrint('✅ 商店新增成功');
+
+        // 顯示成功訊息
+        final sid = result['sid'] ?? '';
+        final message = result['message'] ?? '新增成功';
+
+        Get.snackbar(
+          '🎉 一次完成！',
+          '檔案已上傳並成功新增商店！\n商店編號：$sid\n$message',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Get.theme.colorScheme.primaryContainer,
+          colorText: Get.theme.colorScheme.onPrimaryContainer,
+          duration: const Duration(seconds: 5),
+        );
+
+        return true;
+      } else {
+        throw Exception(result['error'] ?? '上傳失敗');
+      }
+    } catch (e) {
+      // 統一錯誤處理
+      hasError.value = true;
+      errorMessage.value = '選擇檔案並新增商店失敗：$e';
+
+      Get.snackbar(
+        '❌ 操作失敗',
+        '選擇檔案並新增商店失敗：$e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
+        duration: const Duration(seconds: 4),
+      );
+
+      return false;
+    }
+  }
+
+  /// 內部方法：選擇CSV檔案並準備上傳（不顯示上傳成功訊息）
+  Future<void> _pickCSVFileForUpload() async {
+    try {
+      isFileUploading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+      uploadResult.value = null;
+
+      // 使用 file_picker 選取檔案
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        selectedFileName.value = file.name;
+
+        // 讀取檔案內容
+        String csvString;
+        if (file.bytes != null) {
+          // Web 平台使用 bytes
+          csvString = _decodeBytes(file.bytes!);
+        } else if (file.path != null) {
+          // 桌面/移動平台使用 path
+          final csvFile = File(file.path!);
+          final bytes = await csvFile.readAsBytes();
+          csvString = _decodeBytes(bytes);
+        } else {
+          throw Exception('無法讀取檔案內容');
+        }
+
+        // 存儲原始 CSV 內容供 API 上傳使用
+        rawCsvContent.value = csvString;
+
+        await _processCsvContent(csvString);
+
+        debugPrint('📁 檔案準備完成：${file.name}');
+      } else {
+        // 使用者取消選取
+        throw Exception('使用者取消選擇檔案');
+      }
+    } finally {
+      isFileUploading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 案件審核結果：資料錯誤退回重新輸入
+  /// ==========================================
+  Future<bool> caseReviewFailed(int applicationId, String reviewNote) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.caseReviewFailed(
+        applicationId: applicationId,
+        reviewNote: reviewNote,
+      );
+
+      if (result.isSuccess) {
+        Get.snackbar(
+          '✅ 批准成功',
+          '案件 #$applicationId 已被批准',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Get.theme.colorScheme.primaryContainer,
+          colorText: Get.theme.colorScheme.onPrimaryContainer,
+        );
+        return true;
+      } else {
+        _handleError(result.error ?? '批准案件失敗');
+        return false;
+      }
+    } catch (e) {
+      _handleError('批准案件時發生錯誤：$e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 案件審核結果：結案
+  /// ==========================================
+  Future<bool> caseClose(int applicationId) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.applicationCaseClose(
+        applicationId: applicationId,
+      );
+
+      if (result.isSuccess) {
+        Get.snackbar(
+          '✅ 批准成功',
+          '案件 #$applicationId 已被批准',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Get.theme.colorScheme.primaryContainer,
+          colorText: Get.theme.colorScheme.onPrimaryContainer,
+        );
+        return true;
+      } else {
+        _handleError(result.error ?? '批准案件失敗');
+        return false;
+      }
+    } catch (e) {
+      _handleError('批准案件時發生錯誤：$e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 分頁相關方法
+  /// ==========================================
+
+  /// 設定每頁顯示數量
+  void setItemsPerPage(int items) {
+    itemsPerPage.value = items;
+    currentPage.value = 1; // 重置到第一頁
+    getApplicationList(); // 重新載入資料
+  }
+
+  /// 前往指定頁面
+  void goToPage(int page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage.value = page;
+      getApplicationList();
+    }
+  }
+
+  /// 下一頁
+  void nextPage() {
+    if (currentPage.value < totalPages) {
+      currentPage.value++;
+      getApplicationList();
+    }
+  }
+
+  /// 上一頁
+  void previousPage() {
+    if (currentPage.value > 1) {
+      currentPage.value--;
+      getApplicationList();
+    }
+  }
+
+  /// 計算總頁數
+  int get totalPages {
+    if (totalItems.value == 0) return 1;
+    return (totalItems.value / itemsPerPage.value).ceil();
+  }
+
+  /// 取得當前頁面的資料
+  List<Application> get paginatedList {
+    // 首先按申請建立時間升序排序
+    final sortedList = List<Application>.from(applicationList);
+    sortedList.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    final startIndex = (currentPage.value - 1) * itemsPerPage.value;
+    final endIndex = (startIndex + itemsPerPage.value).clamp(
+      0,
+      sortedList.length,
+    );
+
+    if (startIndex >= sortedList.length) return [];
+
+    return sortedList.sublist(startIndex, endIndex);
+  }
+
+  /// 取得分頁資訊文字
+  String get paginationInfo {
+    if (applicationList.isEmpty) return '共 0 筆';
+
+    final startIndex = (currentPage.value - 1) * itemsPerPage.value + 1;
+    final endIndex = (startIndex + itemsPerPage.value - 1).clamp(
+      startIndex,
+      totalItems.value,
+    );
+
+    return '第 $startIndex - $endIndex 筆，共 ${totalItems.value} 筆';
+  }
+
+  /// ==========================================
+  /// 申請資料編輯相關方法
+  /// ==========================================
+
+  /// 設定正在編輯的申請資料
+  void setEditingApplication(Application application) {
+    editingApplication.value = Application(
+      id: application.id,
+      reviewNote: application.reviewNote,
+      imageUrl: application.imageUrl,
+      closeAt: application.closeAt,
+      closeBy: application.closeBy,
+      shopImage: application.shopImage,
+      shopAddress: application.shopAddress,
+      uid: application.uid,
+      shopMobile: application.shopMobile,
+      shopName: application.shopName,
+      shopEmail: application.shopEmail,
+      shopDescription: application.shopDescription,
+      reviewStatus: application.reviewStatus,
+      closeByName: application.closeByName,
+      shopPhone: application.shopPhone,
+      shopContactName: application.shopContactName,
+      reviewBy: application.reviewBy,
+      status: application.status,
+      shopWebsite: application.shopWebsite,
+      isClose: application.isClose,
+      reviewerName: application.reviewerName,
+      shopTaxId: application.shopTaxId,
+      shopNote: application.shopNote,
+      applicantIdentity: application.applicantIdentity,
+      reviewAt: application.reviewAt,
+      reviewByName: application.reviewByName,
+      createdAt: application.createdAt,
+      closerName: application.closerName,
+      userName: application.userName,
+    );
+    hasUnsavedChanges.value = false;
+  }
+
+  /// 更新申請資料欄位
+  void updateApplicationField(String fieldName, String value) {
+    if (editingApplication.value == null) return;
+
+    final current = editingApplication.value!;
+    Application updatedApplication;
+
+    switch (fieldName) {
+      case 'shopName':
+        if (current.shopName == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: value,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopTaxId':
+        if (current.shopTaxId == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: value.isEmpty ? null : value,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopPhone':
+        if (current.shopPhone == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: value,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopContactName':
+        if (current.shopContactName == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: value,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopMobile':
+        if (current.shopMobile == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: value.isEmpty ? null : value,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopWebsite':
+        if (current.shopWebsite == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: value,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopEmail':
+        if (current.shopEmail == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: value.isEmpty ? null : value,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopAddress':
+        if (current.shopAddress == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: value,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopDescription':
+        if (current.shopDescription == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: value.isEmpty ? null : value,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: current.shopNote,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      case 'shopNote':
+        if (current.shopNote == value) return;
+        updatedApplication = Application(
+          id: current.id,
+          reviewNote: current.reviewNote,
+          imageUrl: current.imageUrl,
+          closeAt: current.closeAt,
+          closeBy: current.closeBy,
+          shopImage: current.shopImage,
+          shopAddress: current.shopAddress,
+          uid: current.uid,
+          shopMobile: current.shopMobile,
+          shopName: current.shopName,
+          shopEmail: current.shopEmail,
+          shopDescription: current.shopDescription,
+          reviewStatus: current.reviewStatus,
+          closeByName: current.closeByName,
+          shopPhone: current.shopPhone,
+          shopContactName: current.shopContactName,
+          reviewBy: current.reviewBy,
+          status: current.status,
+          shopWebsite: current.shopWebsite,
+          isClose: current.isClose,
+          reviewerName: current.reviewerName,
+          shopTaxId: current.shopTaxId,
+          shopNote: value.isEmpty ? null : value,
+          applicantIdentity: current.applicantIdentity,
+          reviewAt: current.reviewAt,
+          reviewByName: current.reviewByName,
+          createdAt: current.createdAt,
+          closerName: current.closerName,
+          userName: current.userName,
+        );
+        break;
+      default:
+        return; // 未知欄位，不做任何處理
+    }
+
+    editingApplication.value = updatedApplication;
+    hasUnsavedChanges.value = true;
+  }
+
+  /// 儲存申請資料
+  Future<bool> saveApplicationData() async {
+    if (editingApplication.value == null) {
+      _handleError('沒有可儲存的資料');
+      return false;
+    }
+
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      // TODO: 實現儲存 API 調用
+      // final result = await _applicationService.updateApplication(editingApplication.value!);
+
+      // 暫時模擬儲存成功
+      await Future.delayed(const Duration(seconds: 1));
+
+      Get.snackbar(
+        '✅ 儲存成功',
+        '申請資料已更新',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
+      );
+
+      hasUnsavedChanges.value = false;
+      return true;
+    } catch (e) {
+      _handleError('儲存資料時發生錯誤：$e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// 重置變更
+  void resetChanges() {
+    hasUnsavedChanges.value = false;
+    editingApplication.value = null;
+  }
+
+  /// 檢查是否有未儲存的變更
+  bool get hasChanges => hasUnsavedChanges.value;
+
+  /// ==========================================
+  /// 狀態管理方法
+  /// ==========================================
+
+  /// 清除錯誤狀態
+  void clearErrorState() {
+    hasError.value = false;
+    errorMessage.value = '';
+    debugPrint('🧹 已清除錯誤狀態');
+  }
+
+  /// 清除所有狀態（用於頁面重置）
+  void clearAllStates() {
+    clearErrorState();
+    isLoading.value = false;
+    hasUnsavedChanges.value = false;
+    debugPrint('🧹 已清除所有狀態');
   }
 }

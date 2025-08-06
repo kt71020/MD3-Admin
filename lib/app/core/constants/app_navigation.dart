@@ -14,11 +14,11 @@ class AppNavigation {
       icon: Icons.app_registration,
       route: '/application',
     ),
-    NavigationItem(title: '用戶管理', icon: Icons.people, route: '/users'),
-    NavigationItem(title: '訂單管理', icon: Icons.shopping_cart, route: '/orders'),
-    NavigationItem(title: '產品管理', icon: Icons.inventory, route: '/products'),
+    // NavigationItem(title: '用戶管理', icon: Icons.people, route: '/users'),
+    // NavigationItem(title: '訂單管理', icon: Icons.shopping_cart, route: '/orders'),
+    // NavigationItem(title: '產品管理', icon: Icons.inventory, route: '/products'),
     NavigationItem(title: '員工管理', icon: Icons.people_alt, route: '/emplyoee'),
-    NavigationItem(title: '設定', icon: Icons.settings, route: '/settings'),
+    // NavigationItem(title: '設定', icon: Icons.settings, route: '/settings'),
   ];
 
   /// 根據路由路徑找到對應的導航項目

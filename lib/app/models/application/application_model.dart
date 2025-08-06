@@ -11,142 +11,160 @@ String applicationModelToJson(ApplicationModel data) =>
     json.encode(data.toJson());
 
 class ApplicationModel {
-  List<Datum> data;
   int count;
-  String message;
   int status;
+  String message;
+  List<Application> data;
 
   ApplicationModel({
-    required this.data,
     required this.count,
-    required this.message,
     required this.status,
+    required this.data,
+    required this.message,
   });
 
   factory ApplicationModel.fromJson(Map<String, dynamic> json) =>
       ApplicationModel(
-        data: List<Datum>.from(json["data"].map((x) => Datum.fromJson(x))),
         count: json["count"],
-        message: json["message"],
         status: json["status"],
+        data: List<Application>.from(
+          json["data"].map((x) => Application.fromJson(x)),
+        ),
+        message: json["message"],
       );
 
   Map<String, dynamic> toJson() => {
-    "data": List<dynamic>.from(data.map((x) => x.toJson())),
     "count": count,
-    "message": message,
     "status": status,
+    "data": List<dynamic>.from(data.map((x) => x.toJson())),
+    "message": message,
   };
 }
 
-class Datum {
-  String shopAddress;
-  String? shopTaxId;
-  String shopPhone;
-  String? reviewNote;
-  String? shopDescription;
-  String? closeBy;
-  String? closeByName;
-  String? imageUrl;
-  String? shopWebsite;
-  String uid;
+class Application {
   int id;
-  String? shopEmail;
-  String? shopContactName;
+  String? reviewNote;
+  String imageUrl;
+  String? closeAt;
+  String? closeBy;
   String? shopImage;
-  String? shopNote;
-  DateTime? reviewAt;
-  String? reviewBy;
-  String? reviewByName;
-  int applicantIdentity;
-  DateTime createdAt;
-  int isClose;
-  String shopName;
-  String reviewStatus;
-  DateTime? closeAt;
+  String shopAddress;
+  String uid;
   String? shopMobile;
+  String shopName;
+  String? shopEmail;
+  String? shopDescription;
+  String reviewStatus;
+  String? closeByName;
+  String shopPhone;
+  String shopContactName;
+  String? reviewBy;
+  String status;
+  String shopWebsite;
+  bool isClose;
+  String? reviewerName;
+  String? shopTaxId;
+  String? shopNote;
+  int applicantIdentity;
+  String? reviewAt;
+  String? reviewByName;
+  String createdAt;
+  String? closerName;
+  String userName;
 
-  Datum({
-    required this.shopAddress,
-    required this.shopTaxId,
-    required this.shopPhone,
-    required this.reviewNote,
-    required this.shopDescription,
-    required this.closeBy,
-    required this.closeByName,
-    required this.imageUrl,
-    required this.shopWebsite,
-    required this.uid,
+  Application({
     required this.id,
-    required this.shopEmail,
-    required this.shopContactName,
-    required this.shopImage,
-    required this.shopNote,
-    required this.reviewAt,
-    required this.reviewBy,
-    required this.reviewByName,
-    required this.applicantIdentity,
-    required this.createdAt,
-    required this.isClose,
-    required this.shopName,
-    required this.reviewStatus,
+    required this.reviewNote,
+    required this.imageUrl,
     required this.closeAt,
+    required this.closeBy,
+    required this.shopImage,
+    required this.shopAddress,
+    required this.uid,
     required this.shopMobile,
+    required this.shopName,
+    required this.shopEmail,
+    required this.shopDescription,
+    required this.reviewStatus,
+    required this.closeByName,
+    required this.shopPhone,
+    required this.shopContactName,
+    required this.reviewBy,
+    required this.status,
+    required this.shopWebsite,
+    required this.isClose,
+    required this.reviewerName,
+    required this.shopTaxId,
+    required this.shopNote,
+    required this.applicantIdentity,
+    required this.reviewAt,
+    required this.reviewByName,
+    required this.createdAt,
+    required this.closerName,
+    required this.userName,
   });
 
-  factory Datum.fromJson(Map<String, dynamic> json) => Datum(
-    shopAddress: json["shop_address"],
-    shopTaxId: json["shop_tax_id"],
-    shopPhone: json["shop_phone"] ?? '',
-    reviewNote: json["review_note"] ?? '',
-    shopDescription: json["shop_description"] ?? '',
-    closeBy: json["close_by"] ?? '',
-    closeByName: json["close_by_name"] ?? '',
-    imageUrl: json["image_url"] ?? '',
-    shopWebsite: json["shop_website"] ?? '',
-    uid: json["uid"] ?? '',
+  factory Application.fromJson(Map<String, dynamic> json) => Application(
     id: json["id"],
-    shopEmail: json["shop_email"] ?? '',
-    shopContactName: json["shop_contact_name"] ?? '',
-    shopImage: json["shop_image"] ?? '',
-    shopNote: json["shop_note"] ?? '',
-    reviewAt: json["review_at"] ?? '',
-    reviewBy: json["review_by"] ?? '',
-    reviewByName: json["review_by_name"] ?? '',
+    reviewNote: json["review_note"],
+    imageUrl: json["image_url"],
+    closeAt: json["close_at"],
+    closeBy: json["close_by"],
+    shopImage: json["shop_image"],
+    shopAddress: json["shop_address"],
+    uid: json["uid"],
+    shopMobile: json["shop_mobile"],
+    shopName: json["shop_name"],
+    shopEmail: json["shop_email"],
+    shopDescription: json["shop_description"],
+    reviewStatus: json["review_status"],
+    closeByName: json["close_by_name"],
+    shopPhone: json["shop_phone"],
+    shopContactName: json["shop_contact_name"],
+    reviewBy: json["review_by"],
+    status: json["status"],
+    shopWebsite: json["shop_website"],
+    isClose: json["is_close"] == 1,
+    reviewerName: json["reviewer_name"],
+    shopTaxId: json["shop_tax_id"],
+    shopNote: json["shop_note"],
     applicantIdentity: json["applicant_identity"],
-    createdAt: json["created_at"] ?? '',
-    isClose: json["is_close"],
-    shopName: json["shop_name"] ?? '',
-    reviewStatus: json["review_status"] ?? '',
-    closeAt: json["close_at"] ?? '',
-    shopMobile: json["shop_mobile"] ?? '',
+    reviewAt: json["review_at"],
+    reviewByName: json["review_by_name"],
+    createdAt: json["created_at"],
+    closerName: json["closer_name"],
+    userName: json["user_name"],
   );
 
   Map<String, dynamic> toJson() => {
-    "shop_address": shopAddress,
-    "shop_tax_id": shopTaxId,
-    "shop_phone": shopPhone,
-    "review_note": reviewNote,
-    "shop_description": shopDescription,
-    "close_by": closeBy,
-    "close_by_name": closeByName,
-    "image_url": imageUrl,
-    "shop_website": shopWebsite,
-    "uid": uid,
     "id": id,
-    "shop_email": shopEmail,
-    "shop_contact_name": shopContactName,
-    "shop_image": shopImage,
-    "shop_note": shopNote,
-    "review_at": reviewAt,
-    "review_by": reviewBy,
-    "review_by_name": reviewByName,
-    "applicant_identity": applicantIdentity,
-    "created_at": createdAt,
-    "is_close": isClose,
-    "shop_name": shopName,
-    "review_status": reviewStatus,
+    "review_note": reviewNote,
+    "image_url": imageUrl,
     "close_at": closeAt,
+    "close_by": closeBy,
+    "shop_image": shopImage,
+    "shop_address": shopAddress,
+    "uid": uid,
     "shop_mobile": shopMobile,
+    "shop_name": shopName,
+    "shop_email": shopEmail,
+    "shop_description": shopDescription,
+    "review_status": reviewStatus,
+    "close_by_name": closeByName,
+    "shop_phone": shopPhone,
+    "shop_contact_name": shopContactName,
+    "review_by": reviewBy,
+    "status": status,
+    "shop_website": shopWebsite,
+    "is_close": isClose,
+    "reviewer_name": reviewerName,
+    "shop_tax_id": shopTaxId,
+    "shop_note": shopNote,
+    "applicant_identity": applicantIdentity,
+    "review_at": reviewAt,
+    "review_by_name": reviewByName,
+    "created_at": createdAt,
+    "closer_name": closerName,
+    "user_name": userName,
   };
 }

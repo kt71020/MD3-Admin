@@ -73,6 +73,71 @@ class ApplicationAdd extends GetView<ApplicationController> {
                                     foregroundColor: Colors.white,
                                   ),
                                 ),
+                                const SizedBox(height: 12),
+
+                                // 新增：一鍵完成按鈕
+                                Container(
+                                  width: double.infinity,
+                                  height: 1,
+                                  color: Colors.grey.shade300,
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                ),
+
+                                Obx(
+                                  () => ElevatedButton.icon(
+                                    onPressed:
+                                        (controller.isFileUploading.value ||
+                                                controller.isApiUploading.value)
+                                            ? null
+                                            : controller.uploadCSVAndAddShop,
+                                    icon:
+                                        (controller.isFileUploading.value ||
+                                                controller.isApiUploading.value)
+                                            ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                            : const Icon(Icons.rocket_launch),
+                                    label: Text(
+                                      (controller.isFileUploading.value ||
+                                              controller.isApiUploading.value)
+                                          ? '正在處理...'
+                                          : '🚀 一鍵完成',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+                                Text(
+                                  '選擇CSV檔案並直接新增商店',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade600,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+
                                 const SizedBox(height: 8),
                                 Text(
                                   '支援 CSV 格式檔案',
