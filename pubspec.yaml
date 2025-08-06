@@ -60,6 +60,8 @@ dependencies:
   # 檔案處理
   file_picker: ^8.1.5
   csv: ^6.0.0
+  http_parser: ^4.1.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
