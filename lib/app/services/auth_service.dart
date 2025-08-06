@@ -262,7 +262,7 @@ class AuthService extends GetxService {
         'level': userLevel.value,
         'avatar': userAvatar.value,
         'uid': uid.value,
-        // JWT token 不存儲到 SharedPreferences - 只保存在記憶體中
+        'token': token.value,
         'name': userName.value,
       };
       await prefs.setString(_userDataKey, jsonEncode(userData));
@@ -284,7 +284,7 @@ class AuthService extends GetxService {
         userLevel.value = userData['level'] ?? '';
         userAvatar.value = userData['avatar'] ?? '';
         uid.value = userData['uid'] ?? '';
-        // JWT token 不從 SharedPreferences 讀取 - 需要重新登入取得
+        token.value = userData['token'] ?? '';
         userName.value = userData['name'] ?? '';
       }
     } catch (e) {
