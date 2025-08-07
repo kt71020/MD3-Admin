@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../constants/api_urls.dart';
 import '../services/auth_service.dart';
 import 'api_service.dart';
@@ -49,7 +51,7 @@ class ApplicationService {
     required String reviewNote,
   }) async {
     final authService = AuthService.instance;
-
+    debugPrint('🔄 案件審核人：${authService.currentUserName}');
     final requestBody = {
       "id": applicationId,
       "review_by": authService.currentUid,
@@ -155,6 +157,25 @@ class ApplicationService {
       return ApiResult.success(isReviewed);
     } else {
       return ApiResult.error(result.error ?? '檢查審核狀態失敗');
+    }
+  }
+
+  /// 取得進件資料列表 CSV
+  Future<ApiResult<Map<String, dynamic>>> getApplicationCsvList(
+    int id,
+    String type,
+  ) async {
+    final requestBody = {"id": id, "type": type};
+
+    final result = await _apiService.post(
+      ApiUrls.applicationCsvAPI,
+      data: requestBody,
+    );
+
+    if (result.isSuccess) {
+      return ApiResult.success(result.data);
+    } else {
+      return ApiResult.error(result.error ?? '取得進件資料列表 CSV 失敗');
     }
   }
 }

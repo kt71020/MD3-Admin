@@ -1,10 +1,12 @@
 import 'package:admin/app/core/utils/responsive_utils.dart';
 import 'package:admin/app/core/widgets/responsive_layout.dart';
+import 'package:admin/app/routes/app_pages.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../models/application/application_model.dart';
+import '../../../models/application/application_log_model.dart';
 import '../controllers/application_controller.dart';
 // 條件導入：Web 平台使用 dart:html，其他平台使用 url_launcher
 import 'package:url_launcher/url_launcher.dart';
@@ -34,6 +36,12 @@ class ApplicationEdit extends GetView<ApplicationController> {
         controller.editingApplication.value?.id != application.id) {
       controller.setEditingApplication(application);
     }
+
+    // 載入歷程紀錄並清除備註
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.getApplicationLogList(application.id, '1');
+      controller.clearRemarks(); // 清除備註內容
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +77,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             _buildMainContent(context, application, isEditMode),
             const SizedBox(height: 16),
             // 操作按鈕區域
-            _buildActionButtons(context, application, isEditMode),
+            // _buildActionButtons(context, application, isEditMode),
           ],
         ),
       );
@@ -95,12 +103,30 @@ class ApplicationEdit extends GetView<ApplicationController> {
               const SizedBox(height: 8),
               // Table 2: 審核結果
               _buildReviewInfoTable(context, application, isEditMode),
+              const SizedBox(height: 8),
+              _buildActionButtons(context, application, isEditMode),
             ],
           ),
         ),
         const SizedBox(width: 8),
-        // 右側：圖檔
-        Expanded(flex: 1, child: _buildImageTable(context, application)),
+        // 右側：圖檔、備註、歷程紀錄
+        Expanded(
+          flex: 1,
+          child: Column(
+            children: [
+              // Table 5: 歷程紀錄
+              _buildHistoryTable(context, application),
+              const SizedBox(height: 8),
+              // Table 4: 備註 (只在 status=0,4 時顯示)
+              if (application.status == '0' || application.status == '4') ...[
+                _buildRemarksTable(context, application),
+                const SizedBox(height: 8),
+              ],
+              // Table 3: 圖檔
+              _buildImageTable(context, application),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -628,7 +654,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
               onTap: () => _showImageDialog(context, application.imageUrl),
               child: Container(
                 width: double.infinity,
-                height: 250,
+                height: 350,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(8),
@@ -640,7 +666,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                       child: _buildProxyImage(
                         application.imageUrl,
                         width: double.infinity,
-                        height: 250,
+                        height: 350,
                       ),
                     ),
                     // 放大鏡指示
@@ -797,12 +823,22 @@ class ApplicationEdit extends GetView<ApplicationController> {
         ),
         const SizedBox(width: 16),
         ElevatedButton.icon(
-          onPressed: () => _uploadCSVAndAddShop(context, application),
-          icon: const Icon(Icons.upload_file),
-          label: const Text('上傳 CSV 檔案'),
+          onPressed: () => _downloadCSV(context, application),
+          icon: const Icon(Icons.download, color: Colors.white),
+          label: const Text('下載 CSV 檔案'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.secondary,
             foregroundColor: Theme.of(context).colorScheme.onSecondary,
+          ),
+        ),
+        const SizedBox(width: 16),
+        ElevatedButton.icon(
+          onPressed: () => _uploadCSVAndAddShop(context, application),
+          icon: const Icon(Icons.upload_file, color: Colors.white),
+          label: const Text('上傳 CSV 檔案'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
       ],
@@ -816,7 +852,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
       children: [
         ElevatedButton.icon(
           onPressed: () => _showReviewFailedDialog(context, application),
-          icon: const Icon(Icons.undo),
+          icon: const Icon(Icons.undo, color: Colors.white),
           label: const Text('退回'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.error,
@@ -826,7 +862,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
         const SizedBox(width: 16),
         ElevatedButton.icon(
           onPressed: () => _closeCase(context, application),
-          icon: const Icon(Icons.check_circle),
+          icon: const Icon(Icons.check_circle, color: Colors.white),
           label: const Text('結案'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -850,6 +886,13 @@ class ApplicationEdit extends GetView<ApplicationController> {
   /// 顯示拒絕對話框
   void _showRejectDialog(BuildContext context, Application application) {
     final TextEditingController noteController = TextEditingController();
+    String logContent = '[拒絕]';
+    // 如果 Table 4 備註有內容，則預填到審核附註中
+    if (controller.remarkController.text.isNotEmpty) {
+      logContent += ' ${controller.remarkController.text}';
+    }
+    noteController.text = logContent;
+    controller.clearRemarks(); // 清除備註內容
 
     showDialog(
       context: context,
@@ -879,14 +922,33 @@ class ApplicationEdit extends GetView<ApplicationController> {
               TextButton(onPressed: () => Get.back(), child: const Text('取消')),
               ElevatedButton(
                 onPressed: () async {
-                  Get.back();
-                  final success = await controller.reject(
+                  String logContent = noteController.text;
+                  debugPrint('🔄 拒絕原因：$logContent');
+
+                  // 先執行拒絕操作，等待完成
+                  final success = await controller.applicationReject(
                     application.id,
-                    noteController.text,
+                    logContent,
                   );
+
+                  // 關閉對話框
+                  Get.back();
+
                   if (success) {
-                    Get.back(); // 返回列表頁面
-                    controller.getApplicationList(); // 重新載入列表
+                    // 在 View 層顯示成功訊息，避免 snackbar 生命週期衝突
+                    Get.snackbar(
+                      '✅ 拒絕成功',
+                      '案件 #${application.id} 已被拒絕',
+                      snackPosition: SnackPosition.TOP,
+                      backgroundColor: Get.theme.colorScheme.errorContainer,
+                      colorText: Get.theme.colorScheme.onErrorContainer,
+                      duration: const Duration(seconds: 5),
+                    );
+
+                    // 延遲一下再跳轉，讓 snackbar 有時間顯示
+                    await Future.delayed(const Duration(milliseconds: 2000));
+                    Get.toNamed(Routes.applicationRequest); // 返回列表頁面
+                    // controller.getApplicationList(); // 重新載入列表
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -903,6 +965,13 @@ class ApplicationEdit extends GetView<ApplicationController> {
   /// 顯示退回對話框
   void _showReviewFailedDialog(BuildContext context, Application application) {
     final TextEditingController noteController = TextEditingController();
+    String logContent = '[退回]';
+    // 如果 Table 4 備註有內容，則預填到審核附註中
+    if (controller.remarkController.text.isNotEmpty) {
+      logContent += ' ${controller.remarkController.text}';
+    }
+    noteController.text = logContent;
+    controller.clearRemarks(); // 清除備註內容
 
     showDialog(
       context: context,
@@ -932,12 +1001,28 @@ class ApplicationEdit extends GetView<ApplicationController> {
               TextButton(onPressed: () => Get.back(), child: const Text('取消')),
               ElevatedButton(
                 onPressed: () async {
-                  Get.back();
+                  // 先執行退回操作，等待完成
                   final success = await controller.caseReviewFailed(
                     application.id,
                     noteController.text,
                   );
+
+                  // 關閉對話框
+                  Get.back();
+
                   if (success) {
+                    // 在 View 層顯示成功訊息，避免 snackbar 生命週期衝突
+                    Get.snackbar(
+                      '✅ 退回成功',
+                      '案件 #${application.id} 已被退回',
+                      snackPosition: SnackPosition.TOP,
+                      backgroundColor: Get.theme.colorScheme.errorContainer,
+                      colorText: Get.theme.colorScheme.onErrorContainer,
+                      duration: const Duration(seconds: 2),
+                    );
+
+                    // 延遲一下再跳轉，讓 snackbar 有時間顯示
+                    await Future.delayed(const Duration(milliseconds: 500));
                     Get.back(); // 返回列表頁面
                     controller.getApplicationList(); // 重新載入列表
                   }
@@ -958,10 +1043,32 @@ class ApplicationEdit extends GetView<ApplicationController> {
     BuildContext context,
     Application application,
   ) async {
-    final success = await controller.approve(application.id, '');
+    // 取得 Table 4: 備註
+    String logContent = '[核准]';
+    // 如果 Table 4 備註有內容，則預填到審核附註中
+    if (controller.remarkController.text.isNotEmpty) {
+      logContent += ' ${controller.remarkController.text}';
+    }
+    controller.clearRemarks(); // 清除備註內容
+    final success = await controller.applicationApprove(
+      application.id,
+      logContent,
+    );
     if (success) {
-      Get.back(); // 返回列表頁面
-      controller.getApplicationList(); // 重新載入列表
+      // 在 View 層顯示成功訊息，避免 snackbar 生命週期衝突
+      Get.snackbar(
+        '✅ 核准成功',
+        '案件 #${application.id} 已被核准',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
+        duration: const Duration(seconds: 5),
+      );
+
+      // 延遲一下再跳轉，讓 snackbar 有時間顯示
+      await Future.delayed(const Duration(milliseconds: 500));
+      Get.toNamed(Routes.applicationRequest); // 返回列表頁面
+      // controller.getApplicationList(); // 重新載入列表
     }
   }
 
@@ -972,6 +1079,12 @@ class ApplicationEdit extends GetView<ApplicationController> {
       // 可以選擇是否返回列表頁面或保持在當前頁面
       // Get.back(); // 如果想要返回列表頁面，取消註解這行
     }
+  }
+
+  /// 下載 CSV 檔案
+  void _downloadCSV(BuildContext context, Application application) async {
+    // 使用 Controller 中的新方法來下載 CSV
+    await controller.downloadCsvFile(application.id, '1', application.shopName);
   }
 
   /// 上傳CSV並新增商店
@@ -1207,9 +1320,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
     // 建構 Proxy URL
     final String proxyUrl = '$proxyBaseUrl?url=$encodedUrl';
 
-    debugPrint('🔄 使用 Perl Dancer2 Proxy Server:');
-    debugPrint('📍 原始: $originalImageUrl');
-    debugPrint('📍 Proxy: $proxyUrl');
+    // debugPrint('🔄 使用 Perl Dancer2 Proxy Server:');
+    // debugPrint('📍 原始: $originalImageUrl');
+    // debugPrint('📍 Proxy: $proxyUrl');
 
     return proxyUrl;
   }
@@ -1259,6 +1372,230 @@ class ApplicationEdit extends GetView<ApplicationController> {
         );
       }
     }
+  }
+
+  /// 建立備註表格 (Table 4) - 只在 status=0,4 時顯示
+  Widget _buildRemarksTable(BuildContext context, Application application) {
+    return ResponsiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '備註',
+            style: TextStyle(
+              fontSize: ResponsiveUtils.responsiveFontSize(context, 15),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // 預設備註選單
+          _buildRemarkDropdown(context, application),
+          const SizedBox(height: 8),
+
+          // 備註輸入框
+          _buildRemarkTextField(context, application),
+        ],
+      ),
+    );
+  }
+
+  /// 建立備註下拉選單
+  Widget _buildRemarkDropdown(BuildContext context, Application application) {
+    // 根據 status 決定預設選項
+    List<String> options = [];
+    if (application.status == '0') {
+      options = ['圖片不法辨識', '資料不完整', '商店已經存在', '拒絕申請', '接受申請'];
+    } else if (application.status == '4') {
+      options = ['資料有誤', '案件完成'];
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '預設備註',
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              hint: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text('選擇預設備註'),
+              ),
+              isExpanded: true,
+              items:
+                  options.map((String option) {
+                    return DropdownMenuItem<String>(
+                      value: option,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(option),
+                      ),
+                    );
+                  }).toList(),
+              onChanged: (String? selectedOption) {
+                if (selectedOption != null) {
+                  // 將選擇的選項添加到備註輸入框
+                  controller.addRemark(selectedOption);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 建立備註輸入框
+  Widget _buildRemarkTextField(BuildContext context, Application application) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '備註內容',
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        ),
+        const SizedBox(height: 2),
+        TextFormField(
+          controller: controller.remarkController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black12, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.black54, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            isDense: true,
+            hintText: '請輸入備註...',
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 建立歷程紀錄表格 (Table 5)
+  Widget _buildHistoryTable(BuildContext context, Application application) {
+    return ResponsiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '歷程紀錄',
+            style: TextStyle(
+              fontSize: ResponsiveUtils.responsiveFontSize(context, 15),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // 歷程紀錄列表
+          Obx(() {
+            if (controller.isLoading.value) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            if (controller.applicationLogList.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Text('無歷程紀錄', style: TextStyle(color: Colors.grey)),
+                ),
+              );
+            }
+
+            return Container(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: controller.applicationLogList.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final log = controller.applicationLogList[index];
+                  return _buildHistoryItem(log);
+                },
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// 建立單個歷程紀錄項目
+  Widget _buildHistoryItem(ApplicationLog log) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 第一行：姓名和時間
+          Row(
+            children: [
+              Icon(Icons.person, size: 14, color: Colors.blue.shade600),
+              const SizedBox(width: 4),
+              Text(
+                log.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDateTime(log.createdAt),
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // 第二行：內容
+          if (log.content != null && log.content!.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Text(
+                log.content!,
+                style: const TextStyle(fontSize: 12, color: Colors.black87),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   /// 顯示圖片放大對話框

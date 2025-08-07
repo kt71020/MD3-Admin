@@ -1,3 +1,4 @@
+import 'package:admin/app/models/application/application_csv_model.dart';
 import 'package:admin/app/models/application/application_log_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,6 +13,8 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../../../constants/api_urls.dart';
+import 'dart:html' as html show AnchorElement, Blob, Url;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApplicationController extends GetxController {
   // 服務實例
@@ -45,6 +48,10 @@ class ApplicationController extends GetxController {
   final editingApplication = Rxn<Application>();
   final hasUnsavedChanges = false.obs;
 
+  // 備註輸入控制器
+  final remarkController = TextEditingController();
+  final remarkText = ''.obs;
+
   // 分頁相關
   final currentPage = 1.obs;
   final itemsPerPage = 30.obs;
@@ -54,6 +61,10 @@ class ApplicationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // 監聽備註輸入變化
+    remarkController.addListener(() {
+      remarkText.value = remarkController.text;
+    });
     // getApplicationList();
   }
 
@@ -66,9 +77,26 @@ class ApplicationController extends GetxController {
 
   @override
   void onClose() {
+    remarkController.dispose();
     super.onClose();
     applicationList.clear();
     applicationModel.value = null;
+  }
+
+  /// 清除備註內容
+  void clearRemarks() {
+    remarkController.clear();
+    remarkText.value = '';
+  }
+
+  /// 添加備註內容
+  void addRemark(String remark) {
+    final currentText = remarkController.text;
+    if (currentText.isEmpty) {
+      remarkController.text = remark;
+    } else {
+      remarkController.text = '$currentText $remark';
+    }
   }
 
   /// 選取並上傳 CSV 檔案
@@ -493,7 +521,7 @@ class ApplicationController extends GetxController {
   /// ==========================================
   /// 案件審核結果：拒絕
   /// ==========================================
-  Future<bool> reject(int applicationId, String reviewNote) async {
+  Future<bool> applicationReject(int applicationId, String reviewNote) async {
     try {
       isLoading.value = true;
       hasError.value = false;
@@ -505,13 +533,8 @@ class ApplicationController extends GetxController {
       );
 
       if (result.isSuccess) {
-        Get.snackbar(
-          '✅ 拒絕成功',
-          '案件 #$applicationId 已被拒絕',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Get.theme.colorScheme.errorContainer,
-          colorText: Get.theme.colorScheme.onErrorContainer,
-        );
+        debugPrint('🔄 拒絕成功：$reviewNote');
+        // 移除 snackbar，由 View 層處理 UI 反饋
         return true;
       } else {
         _handleError(result.error ?? '拒絕案件失敗');
@@ -528,7 +551,7 @@ class ApplicationController extends GetxController {
   /// ==========================================
   /// 案件審核結果：通過
   /// ==========================================
-  Future<bool> approve(int applicationId, String reviewNote) async {
+  Future<bool> applicationApprove(int applicationId, String reviewNote) async {
     try {
       isLoading.value = true;
       hasError.value = false;
@@ -1345,6 +1368,136 @@ class ApplicationController extends GetxController {
       return null;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// 取得進件資料列表 CSV
+  /// ==========================================
+  Future<AppleicationCsvModel?> getApplicationCsvList(
+    int id,
+    String type,
+  ) async {
+    // 初始化觀察變數
+
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.getApplicationCsvList(id, type);
+
+      if (result.isSuccess) {
+        // 將 API 回應轉換成 ApplicationModel
+        final model = AppleicationCsvModel.fromJson(result.data!);
+        debugPrint('🔄 取得案件列表成功：${model.csv.length} 筆');
+        return model;
+      } else {
+        _handleError(result.error ?? '取得案件列表失敗');
+        return null;
+      }
+    } catch (e) {
+      _handleError('取得案件列表時發生錯誤：$e');
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// ==========================================
+  /// 下載 CSV 檔案
+  /// ==========================================
+  Future<void> downloadCsvFile(int id, String type, String shopName) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      debugPrint('🔄 開始取得 CSV 資料...');
+
+      // 取得 CSV 資料
+      final csvModel = await getApplicationCsvList(id, type);
+
+      if (csvModel == null || csvModel.csv.isEmpty) {
+        throw Exception('沒有可下載的資料');
+      }
+
+      // 將 List<String> 轉換為 CSV 文字內容
+      final csvContent = csvModel.csv.join('');
+
+      // 生成檔案名稱
+      // 取得日期 MM_DD
+      final date = DateTime.now().toString().split(' ')[0].split('-').join('_');
+      // 取得  timestamp 最後 6 碼
+      final timestamp = DateTime.now().millisecondsSinceEpoch
+          .toString()
+          .substring(
+            DateTime.now().millisecondsSinceEpoch.toString().length - 6,
+          );
+      final fileName = '${shopName}_${date}_$timestamp.csv';
+
+      debugPrint('📁 準備下載檔案：$fileName (${csvContent.length} 字元)');
+
+      if (kIsWeb) {
+        // Web 平台：使用瀏覽器下載
+        _downloadForWeb(csvContent, fileName);
+      } else {
+        // 非 Web 平台：儲存到檔案系統
+        await _downloadForNonWeb(csvContent, fileName);
+      }
+
+      Get.snackbar(
+        '✅ 下載成功',
+        '檔案 $fileName 已準備下載',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      _handleError('下載 CSV 檔案時發生錯誤：$e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Web 平台檔案下載
+  void _downloadForWeb(String content, String fileName) {
+    // 轉換為 UTF-8 bytes 並加上 BOM
+    final bytes = [0xEF, 0xBB, 0xBF] + utf8.encode(content);
+    final blob = html.Blob([Uint8List.fromList(bytes)], 'text/csv');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    // 建立下載連結並觸發下載
+    html.AnchorElement(href: url)
+      ..setAttribute('download', fileName)
+      ..click();
+
+    html.Url.revokeObjectUrl(url);
+    debugPrint('✅ Web 檔案下載觸發完成');
+  }
+
+  /// 非 Web 平台檔案下載（儲存到下載資料夾）
+  Future<void> _downloadForNonWeb(String content, String fileName) async {
+    try {
+      // 對於非 Web 平台，我們可以使用 file_picker 讓使用者選擇儲存位置
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: '儲存 CSV 檔案',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+
+      if (result != null) {
+        final file = File(result);
+        // 寫入 UTF-8 BOM + 內容
+        final bytes = [0xEF, 0xBB, 0xBF] + utf8.encode(content);
+        await file.writeAsBytes(bytes);
+        debugPrint('✅ 檔案已儲存到：$result');
+      } else {
+        debugPrint('⚠️  使用者取消儲存');
+      }
+    } catch (e) {
+      throw Exception('儲存檔案失敗：$e');
     }
   }
 }
