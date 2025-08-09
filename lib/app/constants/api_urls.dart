@@ -40,6 +40,7 @@ class ApiUrls {
   /// 取得環境變數值
   static String _getEnvValue(String key, {String fallback = ''}) {
     if (!dotenv.isInitialized) return fallback;
+    debugPrint('🔄 取得環境變數：$key');
     return dotenv.get(key, fallback: fallback);
   }
 
