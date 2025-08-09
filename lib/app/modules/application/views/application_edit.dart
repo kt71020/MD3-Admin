@@ -265,6 +265,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           fieldName: 'shopAddress',
           getValue: (app) => app.shopAddress,
           canEdit: canEdit,
+          maxLines: 3, // 改為多行支援
         ),
         const SizedBox(height: 6),
 
@@ -275,7 +276,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           fieldName: 'shopDescription',
           getValue: (app) => app.shopDescription ?? '',
           canEdit: canEdit,
-          maxLines: 1,
+          maxLines: 4, // 改為多行支援
         ),
         const SizedBox(height: 6),
 
@@ -286,7 +287,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
           fieldName: 'shopNote',
           getValue: (app) => app.shopNote ?? '',
           canEdit: canEdit,
-          maxLines: 1,
+          maxLines: 4, // 改為多行支援
         ),
 
         // 顯示未儲存變更提示 (只在可編輯狀態下顯示)
@@ -345,7 +346,6 @@ class ApplicationEdit extends GetView<ApplicationController> {
         const SizedBox(height: 2),
 
         TextFormField(
-          key: ValueKey('readonly_${label}_$value'),
           initialValue: value,
           readOnly: true, // 設定為只讀
           maxLines: maxLines,
@@ -407,11 +407,19 @@ class ApplicationEdit extends GetView<ApplicationController> {
         ),
         const SizedBox(height: 2),
         TextFormField(
-          key: ValueKey('unified_${label}_$value'),
           initialValue: value,
           enabled: enabled,
           maxLines: maxLines,
+          minLines: maxLines > 1 ? 2 : 1, // 多行時設定最小行數
           onChanged: onChanged,
+          textInputAction: TextInputAction.next, // 改善輸入體驗
+          // 添加這些屬性來改善輸入體驗
+          autocorrect: true,
+          enableSuggestions: true,
+          // 確保輸入法正常工作
+          keyboardType: TextInputType.text,
+          // 添加這些屬性來改善輸入體驗
+          textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.black12, width: 1),
@@ -429,11 +437,11 @@ class ApplicationEdit extends GetView<ApplicationController> {
               borderSide: const BorderSide(color: Colors.black12, width: 1),
               borderRadius: BorderRadius.circular(8),
             ),
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: 8,
-              vertical: 6,
+              vertical: maxLines > 1 ? 12 : 6, // 多行時增加垂直內距
             ),
-            isDense: true,
+            isDense: maxLines == 1, // 只有單行時才使用 isDense
             // 統一背景色：可編輯時白色，不可編輯時淺灰色
             filled: !enabled,
             fillColor: !enabled ? Colors.grey.shade100 : null,
@@ -457,32 +465,28 @@ class ApplicationEdit extends GetView<ApplicationController> {
     required bool canEdit,
     int maxLines = 1,
   }) {
+    // 以編輯中資料為優先來源，避免重建後回退到舊資料
+    final effectiveApplication =
+        controller.editingApplication.value ?? application;
+
     if (!canEdit) {
-      // 不可編輯時，直接使用原始資料
       return _buildUnifiedFormField(
         label: label,
-        value: getValue(application),
+        value: getValue(effectiveApplication),
         enabled: false,
         maxLines: maxLines,
       );
     }
 
-    // 可編輯時，使用 Obx 監聽編輯狀態
-    return Obx(() {
-      final editingApp = controller.editingApplication.value;
-      final displayValue =
-          editingApp != null ? getValue(editingApp) : getValue(application);
-
-      return _buildUnifiedFormField(
-        label: label,
-        value: displayValue,
-        enabled: true,
-        maxLines: maxLines,
-        onChanged: (value) {
-          controller.updateApplicationField(fieldName, value);
-        },
-      );
-    });
+    return _buildUnifiedFormField(
+      label: label,
+      value: getValue(effectiveApplication),
+      enabled: true,
+      maxLines: maxLines,
+      onChanged: (value) {
+        controller.updateApplicationField(fieldName, value);
+      },
+    );
   }
 
   /// 建立審核結果表格

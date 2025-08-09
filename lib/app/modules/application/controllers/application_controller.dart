@@ -15,6 +15,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../constants/api_urls.dart';
 import 'dart:html' as html show AnchorElement, Blob, Url;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../utils/application_field_updater.dart';
 
 class ApplicationController extends GetxController {
   // 服務實例
@@ -1007,6 +1008,8 @@ class ApplicationController extends GetxController {
       createdAt: application.createdAt,
       closerName: application.closerName,
       userName: application.userName,
+      shopCity: application.shopCity,
+      shopRegion: application.shopRegion,
     );
     hasUnsavedChanges.value = false;
   }
@@ -1014,357 +1017,31 @@ class ApplicationController extends GetxController {
   /// 更新申請資料欄位
   void updateApplicationField(String fieldName, String value) {
     if (editingApplication.value == null) return;
-
-    final current = editingApplication.value!;
-    Application updatedApplication;
-
-    switch (fieldName) {
-      case 'shopName':
-        if (current.shopName == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: value,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopTaxId':
-        if (current.shopTaxId == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: value.isEmpty ? null : value,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopPhone':
-        if (current.shopPhone == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: value,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopContactName':
-        if (current.shopContactName == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: value,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopMobile':
-        if (current.shopMobile == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: value.isEmpty ? null : value,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopWebsite':
-        if (current.shopWebsite == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: value,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopEmail':
-        if (current.shopEmail == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: value.isEmpty ? null : value,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopAddress':
-        if (current.shopAddress == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: value,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopDescription':
-        if (current.shopDescription == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: value.isEmpty ? null : value,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: current.shopNote,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      case 'shopNote':
-        if (current.shopNote == value) return;
-        updatedApplication = Application(
-          id: current.id,
-          reviewNote: current.reviewNote,
-          imageUrl: current.imageUrl,
-          closeAt: current.closeAt,
-          closeBy: current.closeBy,
-          shopImage: current.shopImage,
-          shopAddress: current.shopAddress,
-          uid: current.uid,
-          shopMobile: current.shopMobile,
-          shopName: current.shopName,
-          shopEmail: current.shopEmail,
-          shopDescription: current.shopDescription,
-          reviewStatus: current.reviewStatus,
-          closeByName: current.closeByName,
-          shopPhone: current.shopPhone,
-          shopContactName: current.shopContactName,
-          reviewBy: current.reviewBy,
-          status: current.status,
-          shopWebsite: current.shopWebsite,
-          isClose: current.isClose,
-          reviewerName: current.reviewerName,
-          shopTaxId: current.shopTaxId,
-          shopNote: value.isEmpty ? null : value,
-          applicantIdentity: current.applicantIdentity,
-          reviewAt: current.reviewAt,
-          reviewByName: current.reviewByName,
-          createdAt: current.createdAt,
-          closerName: current.closerName,
-          userName: current.userName,
-        );
-        break;
-      default:
-        return; // 未知欄位，不做任何處理
+    debugPrint('🔄 更新申請資料欄位：$fieldName: $value');
+    // 檢查欄位是否有效
+    if (!ApplicationFieldUpdater.isValidField(fieldName)) {
+      debugPrint('⚠️ 未知欄位：$fieldName');
+      return;
     }
 
+    // 使用 helper 類來更新欄位
+    final updatedApplication = ApplicationFieldUpdater.updateField(
+      editingApplication.value!,
+      fieldName,
+      value,
+    );
+
+    // 如果沒有變更，直接返回
+    if (updatedApplication == null) {
+      debugPrint('🔄 欄位 $fieldName 沒有變更，跳過更新');
+      return;
+    }
+
+    // 更新編輯中的申請資料
     editingApplication.value = updatedApplication;
     hasUnsavedChanges.value = true;
+
+    debugPrint('✅ 已更新欄位 $fieldName: $value');
   }
 
   /// 儲存申請資料
@@ -1380,18 +1057,54 @@ class ApplicationController extends GetxController {
       errorMessage.value = '';
 
       // TODO: 實現儲存 API 調用
-      // final result = await _applicationService.updateApplication(editingApplication.value!);
-
-      // 暫時模擬儲存成功
-      await Future.delayed(const Duration(seconds: 1));
-
-      Get.snackbar(
-        '✅ 儲存成功',
-        '申請資料已更新',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Get.theme.colorScheme.primaryContainer,
-        colorText: Get.theme.colorScheme.onPrimaryContainer,
+      final result = await _applicationService.updateApplication(
+        editingApplication.value!.id,
+        editingApplication.value!.shopName,
+        editingApplication.value!.shopTaxId ?? '',
+        editingApplication.value!.shopPhone,
+        editingApplication.value!.shopContactName,
+        editingApplication.value!.shopMobile ?? '',
+        editingApplication.value!.shopWebsite,
+        editingApplication.value!.shopEmail ?? '',
+        editingApplication.value!.shopCity ?? '',
+        editingApplication.value!.shopRegion ?? '',
+        editingApplication.value!.shopAddress,
+        editingApplication.value!.shopDescription ?? '',
+        editingApplication.value!.shopNote ?? '',
       );
+
+      if (result.isSuccess) {
+        Get.snackbar(
+          '✅ 儲存成功',
+          '申請資料已更新',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Get.theme.colorScheme.primaryContainer,
+          colorText: Get.theme.colorScheme.onPrimaryContainer,
+        );
+
+        // 同步更新列表中的該筆資料，避免畫面重建後出現舊值
+        final edited = editingApplication.value!;
+        final idx = applicationList.indexWhere((e) => e.id == edited.id);
+        if (idx != -1) {
+          final current = applicationList[idx];
+          applicationList[idx] = current.copyWith(
+            shopName: edited.shopName,
+            shopTaxId: edited.shopTaxId,
+            shopPhone: edited.shopPhone,
+            shopContactName: edited.shopContactName,
+            shopMobile: edited.shopMobile,
+            shopWebsite: edited.shopWebsite,
+            shopEmail: edited.shopEmail,
+            shopCity: edited.shopCity,
+            shopRegion: edited.shopRegion,
+            shopAddress: edited.shopAddress,
+            shopDescription: edited.shopDescription,
+            shopNote: edited.shopNote,
+          );
+        }
+      } else {
+        _handleError(result.error ?? '儲存資料時發生錯誤');
+      }
 
       hasUnsavedChanges.value = false;
       return true;

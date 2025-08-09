@@ -71,6 +71,8 @@ class Application {
   String createdAt;
   String? closerName;
   String userName;
+  String? shopCity;
+  String? shopRegion;
 
   Application({
     required this.id,
@@ -102,6 +104,8 @@ class Application {
     required this.createdAt,
     required this.closerName,
     required this.userName,
+    required this.shopCity,
+    required this.shopRegion,
   });
 
   factory Application.fromJson(Map<String, dynamic> json) => Application(
@@ -134,6 +138,8 @@ class Application {
     createdAt: json["created_at"],
     closerName: json["closer_name"],
     userName: json["user_name"],
+    shopCity: json["shop_city"],
+    shopRegion: json["shop_region"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -166,5 +172,76 @@ class Application {
     "created_at": createdAt,
     "closer_name": closerName,
     "user_name": userName,
+    "shop_city": shopCity,
+    "shop_region": shopRegion,
   };
+
+  /// 創建一個新的 Application 實例，只更新指定的欄位
+  Application copyWith({
+    int? id,
+    String? reviewNote,
+    String? imageUrl,
+    String? closeAt,
+    String? closeBy,
+    String? shopImage,
+    String? shopAddress,
+    String? uid,
+    String? shopMobile,
+    String? shopName,
+    String? shopEmail,
+    String? shopDescription,
+    String? reviewStatus,
+    String? closeByName,
+    String? shopPhone,
+    String? shopContactName,
+    String? reviewBy,
+    String? status,
+    String? shopWebsite,
+    bool? isClose,
+    String? reviewerName,
+    String? shopTaxId,
+    String? shopNote,
+    int? applicantIdentity,
+    String? reviewAt,
+    String? reviewByName,
+    String? createdAt,
+    String? closerName,
+    String? userName,
+    String? shopCity,
+    String? shopRegion,
+  }) {
+    return Application(
+      id: id ?? this.id,
+      reviewNote: reviewNote ?? this.reviewNote,
+      imageUrl: imageUrl ?? this.imageUrl,
+      closeAt: closeAt ?? this.closeAt,
+      closeBy: closeBy ?? this.closeBy,
+      shopImage: shopImage ?? this.shopImage,
+      shopAddress: shopAddress ?? this.shopAddress,
+      uid: uid ?? this.uid,
+      shopMobile: shopMobile ?? this.shopMobile,
+      shopName: shopName ?? this.shopName,
+      shopEmail: shopEmail ?? this.shopEmail,
+      shopDescription: shopDescription ?? this.shopDescription,
+      reviewStatus: reviewStatus ?? this.reviewStatus,
+      closeByName: closeByName ?? this.closeByName,
+      shopPhone: shopPhone ?? this.shopPhone,
+      shopContactName: shopContactName ?? this.shopContactName,
+      reviewBy: reviewBy ?? this.reviewBy,
+      status: status ?? this.status,
+      shopWebsite: shopWebsite ?? this.shopWebsite,
+      isClose: isClose ?? this.isClose,
+      reviewerName: reviewerName ?? this.reviewerName,
+      shopTaxId: shopTaxId ?? this.shopTaxId,
+      shopNote: shopNote ?? this.shopNote,
+      applicantIdentity: applicantIdentity ?? this.applicantIdentity,
+      reviewAt: reviewAt ?? this.reviewAt,
+      reviewByName: reviewByName ?? this.reviewByName,
+      createdAt: createdAt ?? this.createdAt,
+      closerName: closerName ?? this.closerName,
+      userName: userName ?? this.userName,
+      shopCity: shopCity ?? this.shopCity,
+      shopRegion: shopRegion ?? this.shopRegion,
+    );
+  }
 }

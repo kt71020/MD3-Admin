@@ -178,4 +178,49 @@ class ApplicationService {
       return ApiResult.error(result.error ?? '取得進件資料列表 CSV 失敗');
     }
   }
+
+  /// 更新進件資料列
+  Future<ApiResult<Map<String, dynamic>>> updateApplication(
+    int id,
+    String shopName,
+    String shopTaxId,
+    String shopPhone,
+    String shopContactName,
+    String shopMobile,
+    String shopWebsite,
+    String shopEmail,
+    String shopCity,
+    String shopRegion,
+    String shopAddress,
+    String shopDescription,
+    String shopNote,
+  ) async {
+    final requestBody = {
+      "id": id,
+      "shop_name": shopName,
+      "shop_tax_id": shopTaxId,
+      "shop_phone": shopPhone,
+      "shop_contact_name": shopContactName,
+      "shop_mobile": shopMobile,
+      "shop_website": shopWebsite,
+      "shop_email": shopEmail,
+      "shop_city": shopCity,
+      "shop_region": shopRegion,
+      "shop_address": shopAddress,
+      "shop_description": shopDescription,
+      "shop_note": shopNote,
+    };
+
+    final result = await _apiService.post(
+      ApiUrls.applicationUpdateAPI,
+      data: requestBody,
+    );
+    debugPrint('🔄 Service 更新進件資料列：$result');
+
+    if (result.isSuccess) {
+      return ApiResult.success(result.data);
+    } else {
+      return ApiResult.error(result.error ?? '取得進件資料列表 CSV 失敗');
+    }
+  }
 }
