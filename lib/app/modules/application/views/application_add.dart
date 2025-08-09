@@ -91,7 +91,8 @@ class ApplicationAdd extends GetView<ApplicationController> {
                                         (controller.isFileUploading.value ||
                                                 controller.isApiUploading.value)
                                             ? null
-                                            : controller.uploadCSVAndAddShop,
+                                            : () => controller
+                                                .uploadCSVAndAddShop(0),
                                     icon:
                                         (controller.isFileUploading.value ||
                                                 controller.isApiUploading.value)
@@ -262,7 +263,10 @@ class ApplicationAdd extends GetView<ApplicationController> {
                                 onPressed:
                                     controller.isApiUploading.value
                                         ? null
-                                        : controller.uploadAddShop,
+                                        : () => controller.uploadAddShop(
+                                          0,
+                                          'APPLICATION_USER',
+                                        ),
                                 icon:
                                     controller.isApiUploading.value
                                         ? const SizedBox(

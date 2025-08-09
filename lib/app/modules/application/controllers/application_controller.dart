@@ -316,7 +316,10 @@ class ApplicationController extends GetxController {
   /// ==========================================
   /// 上傳商店資料到後端 API
   /// ==========================================
-  Future<Map<String, dynamic>> uploadAddShop() async {
+  Future<Map<String, dynamic>> uploadAddShop(
+    int applicationId,
+    String uploadType,
+  ) async {
     try {
       // 嘗試不同的檔案欄位名稱
       final fileFieldNames = ['file', 'csv_file', 'upload', 'document'];
@@ -325,6 +328,8 @@ class ApplicationController extends GetxController {
         final result = await _attemptUpload(
           fileFieldNames[attempt],
           attempt + 1,
+          applicationId,
+          uploadType,
         );
         if (result['success'] == true) {
           return result;
@@ -368,6 +373,8 @@ class ApplicationController extends GetxController {
   Future<Map<String, dynamic>> _attemptUpload(
     String fileFieldName,
     int attemptNumber,
+    int applicationId,
+    String applicationType,
   ) async {
     try {
       isApiUploading.value = true;
@@ -400,6 +407,8 @@ class ApplicationController extends GetxController {
 
       // 加入用戶 ID（如果需要）
       request.fields['uid'] = authService.currentUid;
+      request.fields['application_id'] = applicationId.toString();
+      request.fields['application_type'] = applicationType;
 
       // 加入 CSV 檔案內容 - 使用正確的欄位名稱和格式
       final csvBytes = utf8.encode(rawCsvContent.value);
@@ -463,7 +472,7 @@ class ApplicationController extends GetxController {
             snackPosition: SnackPosition.TOP,
             backgroundColor: Get.theme.colorScheme.primaryContainer,
             colorText: Get.theme.colorScheme.onPrimaryContainer,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 10),
           );
 
           return {
@@ -614,6 +623,7 @@ class ApplicationController extends GetxController {
       snackPosition: SnackPosition.TOP,
       backgroundColor: Get.theme.colorScheme.errorContainer,
       colorText: Get.theme.colorScheme.onErrorContainer,
+      duration: const Duration(seconds: 10),
     );
   }
 
@@ -622,39 +632,39 @@ class ApplicationController extends GetxController {
   /// 整合 pickAndUploadCSVFile() 與 uploadAddShop() 的功能
   /// 讓使用者選擇檔案後直接進行商店新增程序
   /// ==========================================
-  Future<bool> uploadCSVAndAddShop() async {
+  Future<bool> uploadCSVAndAddShop(int applicationId) async {
     try {
+      // 設置上傳狀態，防止重複點擊
+      isApiUploading.value = true;
+
       // 第一步：選擇並解析CSV檔案
       debugPrint('🔄 開始選擇CSV檔案...');
       await _pickCSVFileForUpload();
 
       // 檢查是否成功選擇檔案
       if (rawCsvContent.value.isEmpty || selectedFileName.value.isEmpty) {
+        _handleError('未選擇檔案或檔案內容為空');
         throw Exception('未選擇檔案或檔案內容為空');
       }
 
       debugPrint('✅ 檔案選擇完成：${selectedFileName.value}');
+      // 檢查CSV檔案的申請編號是否與申請編號相同
+      bool isApplicationIdMatch = _checkApplicationIdMatch(applicationId);
+
+      // 如果申請編號不匹配，停止執行
+      if (!isApplicationIdMatch) {
+        _handleError('CSV檔案中的申請編號與目標申請編號不符，請檢查檔案內容');
+        throw Exception('CSV檔案中的申請編號與目標申請編號不符，請檢查檔案內容');
+      }
+
+      debugPrint('✅ 申請編號驗證通過，繼續執行...');
 
       // 第二步：直接上傳到API進行商店新增
       debugPrint('🚀 開始上傳檔案並新增商店...');
-      final result = await uploadAddShop();
+      final result = await uploadAddShop(applicationId, 'APPLICATION');
 
       if (result['success'] == true) {
         debugPrint('✅ 商店新增成功');
-
-        // 顯示成功訊息
-        final sid = result['sid'] ?? '';
-        final message = result['message'] ?? '新增成功';
-
-        Get.snackbar(
-          '🎉 一次完成！',
-          '檔案已上傳並成功新增商店！\n商店編號：$sid\n$message',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Get.theme.colorScheme.primaryContainer,
-          colorText: Get.theme.colorScheme.onPrimaryContainer,
-          duration: const Duration(seconds: 5),
-        );
-
         return true;
       } else {
         throw Exception(result['error'] ?? '上傳失敗');
@@ -663,17 +673,12 @@ class ApplicationController extends GetxController {
       // 統一錯誤處理
       hasError.value = true;
       errorMessage.value = '選擇檔案並新增商店失敗：$e';
-
-      Get.snackbar(
-        '❌ 操作失敗',
-        '選擇檔案並新增商店失敗：$e',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Get.theme.colorScheme.errorContainer,
-        colorText: Get.theme.colorScheme.onErrorContainer,
-        duration: const Duration(seconds: 4),
-      );
+      debugPrint('❌ 選擇檔案並新增商店失敗：$e');
 
       return false;
+    } finally {
+      // 無論成功或失敗都要重置上傳狀態
+      isApiUploading.value = false;
     }
   }
 
@@ -722,6 +727,107 @@ class ApplicationController extends GetxController {
       }
     } finally {
       isFileUploading.value = false;
+    }
+  }
+
+  /// 檢查CSV檔案中的申請編號是否與傳入的申請編號相同
+  bool _checkApplicationIdMatch(int applicationId) {
+    try {
+      debugPrint('🔍 開始檢查申請編號匹配...');
+      debugPrint('目標申請編號：$applicationId');
+
+      if (rawCsvContent.value.isEmpty) {
+        throw Exception('CSV檔案內容為空');
+      }
+
+      // 解析CSV內容，處理可能的BOM
+      String csvContent = rawCsvContent.value;
+      if (csvContent.startsWith('\uFEFF')) {
+        csvContent = csvContent.substring(1); // 移除BOM
+        debugPrint('🔧 檢測到BOM，已移除');
+      }
+
+      final lines = csvContent.split('\n');
+      String? csvApplicationId;
+
+      debugPrint('📊 開始解析CSV檔案，共${lines.length}行');
+
+      // 尋找申請編號欄位
+      for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        final line = lines[lineIndex];
+        final trimmedLine = line.trim();
+        if (trimmedLine.isEmpty) continue;
+
+        debugPrint('🔍 檢查第${lineIndex + 1}行：$trimmedLine');
+
+        // 檢查是否包含申請編號欄位（支援多種格式）
+        if (trimmedLine.contains('申請編號')) {
+          // 嘗試多種分割方式
+          List<String> parts;
+
+          // 首先嘗試標準CSV分割
+          if (trimmedLine.contains(',')) {
+            parts = trimmedLine.split(',');
+            debugPrint('📋 使用逗號分割，共${parts.length}個欄位');
+          } else if (trimmedLine.contains('\t')) {
+            // 支援Tab分隔
+            parts = trimmedLine.split('\t');
+            debugPrint('📋 使用Tab分割，共${parts.length}個欄位');
+          } else {
+            // 如果沒有分隔符，跳過這行
+            debugPrint('⚠️ 第${lineIndex + 1}行沒有找到分隔符，跳過');
+            continue;
+          }
+
+          // 尋找申請編號欄位和對應的值
+          for (int i = 0; i < parts.length - 1; i++) {
+            final part = parts[i].trim();
+            if (part == '申請編號' && i + 1 < parts.length) {
+              csvApplicationId = parts[i + 1].trim();
+              debugPrint('📋 找到CSV中的申請編號：$csvApplicationId（第${i + 1}欄）');
+              break;
+            }
+          }
+
+          if (csvApplicationId != null) break;
+        }
+      }
+
+      // 檢查是否找到申請編號
+      if (csvApplicationId == null) {
+        throw Exception(
+          'CSV檔案中未找到申請編號欄位，請確認檔案格式正確。\n'
+          '預期格式：申請編號,數字\n'
+          '或：申請編號\t數字',
+        );
+      }
+
+      // 清理申請編號（移除可能的引號和空格）
+      csvApplicationId =
+          csvApplicationId.replaceAll('"', '').replaceAll("'", '').trim();
+      debugPrint('🧹 清理後的申請編號：$csvApplicationId');
+
+      // 比較申請編號
+      final csvId = int.tryParse(csvApplicationId);
+      if (csvId == null) {
+        throw Exception('CSV檔案中的申請編號格式錯誤：$csvApplicationId（應為數字格式）');
+      }
+
+      final isMatch = csvId == applicationId;
+
+      if (isMatch) {
+        debugPrint('✅ 申請編號匹配成功：CSV($csvId) == 目標($applicationId)');
+        return true;
+      } else {
+        debugPrint('❌ 申請編號不匹配：CSV($csvId) != 目標($applicationId)');
+        throw Exception(
+          'CSV檔案中的申請編號($csvId)與目標申請編號($applicationId)不符，請確認檔案內容正確',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 檢查申請編號匹配失敗：$e');
+      _handleError('檢查申請編號匹配失敗：$e');
+      return false;
     }
   }
 

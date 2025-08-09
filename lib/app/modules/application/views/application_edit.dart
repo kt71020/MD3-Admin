@@ -76,8 +76,6 @@ class ApplicationEdit extends GetView<ApplicationController> {
             // 主要內容區域
             _buildMainContent(context, application, isEditMode),
             const SizedBox(height: 16),
-            // 操作按鈕區域
-            // _buildActionButtons(context, application, isEditMode),
           ],
         ),
       );
@@ -342,7 +340,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         ),
         const SizedBox(height: 2),
 
@@ -405,7 +403,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
         ),
         const SizedBox(height: 2),
         TextFormField(
@@ -832,13 +830,30 @@ class ApplicationEdit extends GetView<ApplicationController> {
           ),
         ),
         const SizedBox(width: 16),
-        ElevatedButton.icon(
-          onPressed: () => _uploadCSVAndAddShop(context, application),
-          icon: const Icon(Icons.upload_file, color: Colors.white),
-          label: const Text('上傳 CSV 檔案'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        Obx(
+          () => ElevatedButton.icon(
+            onPressed:
+                controller.isApiUploading.value
+                    ? null
+                    : () => _uploadCSVAndAddShop(context, application),
+            icon:
+                controller.isApiUploading.value
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : const Icon(Icons.upload_file, color: Colors.white),
+            label: Text(
+              controller.isApiUploading.value ? '上傳中...' : '上傳 CSV 檔案',
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
           ),
         ),
       ],
@@ -1092,11 +1107,17 @@ class ApplicationEdit extends GetView<ApplicationController> {
     BuildContext context,
     Application application,
   ) async {
-    final success = await controller.uploadCSVAndAddShop();
+    final success = await controller.uploadCSVAndAddShop(application.id);
     if (success) {
-      Get.back(); // 返回列表頁面
-      controller.getApplicationList(); // 重新載入列表
+      // 更新 status 為 4 等待複檢
+      application.status = '4';
+      // controller.applicationList 更新 id=application.id 的 status 為 4
+      controller
+          .applicationList
+          .firstWhere((element) => element.id == application.id)
+          .status = '4';
     }
+    return;
   }
 
   /// 結案
