@@ -258,36 +258,65 @@ class ApplicationEdit extends GetView<ApplicationController> {
         ),
         const SizedBox(height: 6),
 
-        // 第四行：地址 (1個欄位，全寬)
-        _buildResponsiveFormField(
-          label: '地址',
-          application: application,
-          fieldName: 'shopAddress',
-          getValue: (app) => app.shopAddress,
-          canEdit: canEdit,
-          maxLines: 3, // 改為多行支援
+        // 第四行：城市,鄉鎮市區.地址 (3個欄位) 欄寬 城市1/4, 鄉鎮市區1/4, 地址2/4
+        Row(
+          children: [
+            Expanded(
+              flex: 1,
+              child: _buildResponsiveFormField(
+                label: '城市',
+                application: application,
+                fieldName: 'shopCity',
+                getValue: (app) => app.shopCity ?? '',
+                canEdit: canEdit,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 1,
+              child: _buildResponsiveFormField(
+                label: '鄉鎮市區',
+                application: application,
+                fieldName: 'shopRegion',
+                getValue: (app) => app.shopRegion ?? '',
+                canEdit: canEdit,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: _buildResponsiveFormField(
+                label: '地址',
+                application: application,
+                fieldName: 'shopAddress',
+                getValue: (app) => app.shopAddress,
+                canEdit: canEdit,
+                maxLines: 1, // 保持多行輸入
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 6),
 
         // 第五行：商店描述 (1個欄位，多行文字)
         _buildResponsiveFormField(
-          label: '商店描述',
+          label: '商店描述(最多50字)',
           application: application,
           fieldName: 'shopDescription',
           getValue: (app) => app.shopDescription ?? '',
           canEdit: canEdit,
-          maxLines: 4, // 改為多行支援
+          maxLines: 1, // 改為多行支援
         ),
         const SizedBox(height: 6),
 
         // 第六行：訂購附註 (1個欄位，多行文字)
         _buildResponsiveFormField(
-          label: '訂購附註',
+          label: '訂購附註(最多50字)',
           application: application,
           fieldName: 'shopNote',
           getValue: (app) => app.shopNote ?? '',
           canEdit: canEdit,
-          maxLines: 4, // 改為多行支援
+          maxLines: 1, // 改為多行支援
         ),
 
         // 顯示未儲存變更提示 (只在可編輯狀態下顯示)
@@ -448,8 +477,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
           ),
           style: TextStyle(
             // 統一文字色：可編輯時黑色，不可編輯時灰色
-            color: enabled ? Colors.blueGrey : Colors.black,
-            fontWeight: enabled ? FontWeight.w700 : FontWeight.w500,
+            color:
+                enabled ? const Color.fromARGB(255, 26, 77, 27) : Colors.black,
+            fontWeight: enabled ? FontWeight.w800 : FontWeight.w500,
           ),
         ),
       ],
