@@ -57,10 +57,10 @@ class Application {
   String reviewStatus;
   String? closeByName;
   String shopPhone;
-  String shopContactName;
+  String? shopContactName;
   String? reviewBy;
   String status;
-  String shopWebsite;
+  String? shopWebsite;
   bool isClose;
   String? reviewerName;
   String? shopTaxId;
@@ -73,7 +73,7 @@ class Application {
   String userName;
   String? shopCity;
   String? shopRegion;
-
+  String channel;
   Application({
     required this.id,
     required this.reviewNote,
@@ -106,6 +106,7 @@ class Application {
     required this.userName,
     required this.shopCity,
     required this.shopRegion,
+    required this.channel,
   });
 
   factory Application.fromJson(Map<String, dynamic> json) => Application(
@@ -140,6 +141,7 @@ class Application {
     userName: json["user_name"],
     shopCity: json["shop_city"],
     shopRegion: json["shop_region"],
+    channel: json["channel"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -174,6 +176,7 @@ class Application {
     "user_name": userName,
     "shop_city": shopCity,
     "shop_region": shopRegion,
+    "channel": channel,
   };
 
   /// 創建一個新的 Application 實例，只更新指定的欄位
@@ -209,6 +212,7 @@ class Application {
     String? userName,
     String? shopCity,
     String? shopRegion,
+    String? channel,
   }) {
     return Application(
       id: id ?? this.id,
@@ -242,6 +246,7 @@ class Application {
       userName: userName ?? this.userName,
       shopCity: shopCity ?? this.shopCity,
       shopRegion: shopRegion ?? this.shopRegion,
+      channel: channel ?? this.channel,
     );
   }
 }

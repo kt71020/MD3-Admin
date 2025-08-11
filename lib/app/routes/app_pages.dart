@@ -85,7 +85,13 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.applicationRequest,
-      page: () => const ApplicationRequest(),
+      page: () => ApplicationRequest(channel: 'SHOP'),
+      binding: ApplicationBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.applicationUserRequest,
+      page: () => ApplicationRequest(channel: 'USER'),
       binding: ApplicationBinding(),
       middlewares: [AuthMiddleware()],
     ),

@@ -82,6 +82,8 @@ class ApiUrls {
       _applicationEndpoints['applicationCsv']!;
   static String get applicationUpdateAPI =>
       _applicationEndpoints['applicationUpdate']!;
+  static String get applicationSummaryAPI =>
+      _applicationEndpoints['applicationSummary']!;
   // 私有 endpoints 定義
   static const _userEndpoints = {
     'loginCheck': '/api/v2/adm/user/login_check',
@@ -103,6 +105,7 @@ class ApiUrls {
     'applicationLog': '/api/v2/adm/application/get_application_log_list',
     'applicationCsv': '/api/v2/adm/application/get_csv_file',
     'applicationUpdate': '/api/v2/adm/application/update_application',
+    'applicationSummary': '/api/v2/adm/application/fetch_summary',
   };
 
   // === Helper Methods ===

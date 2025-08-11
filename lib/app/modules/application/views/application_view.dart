@@ -2,6 +2,7 @@ import 'package:admin/app/core/utils/responsive_utils.dart';
 import 'package:admin/app/core/widgets/responsive_layout.dart';
 import 'package:admin/app/core/widgets/responsive_navigation.dart';
 import 'package:admin/app/core/constants/app_navigation.dart';
+import 'package:admin/app/models/application/application_summary_model.dart';
 import 'package:admin/app/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 
@@ -162,8 +163,39 @@ class ApplicationView extends GetView<ApplicationController> {
     return Column(
       children: [
         // 統計概覽區域
-        _buildStatsOverview(context),
-
+        _buildStatsOverview(
+          context,
+          '商店申請數量',
+          controller.applicationSummary.value?.channel.shop ??
+              ApplicationSummary(
+                channel: 'SHOP',
+                approve: 0,
+                colse: 0,
+                pedding: 0,
+                reject: 0,
+                totalApplication: 0,
+                check: 0,
+                newApplication: 0,
+                processing: 0,
+              ),
+        ),
+        // 統計概覽區域
+        _buildStatsOverview(
+          context,
+          '使用者推薦數',
+          controller.applicationSummary.value?.channel.user ??
+              ApplicationSummary(
+                channel: 'USER',
+                approve: 0,
+                colse: 0,
+                pedding: 0,
+                reject: 0,
+                totalApplication: 0,
+                check: 0,
+                newApplication: 0,
+                processing: 0,
+              ),
+        ),
         const SizedBox(height: AdminSpacing.lg),
 
         // 快速操作區域
@@ -178,16 +210,46 @@ class ApplicationView extends GetView<ApplicationController> {
   }
 
   /// 建立統計概覽區域
-  Widget _buildStatsOverview(BuildContext context) {
+  Widget _buildStatsOverview(
+    BuildContext context,
+    String title,
+    ApplicationSummary summary,
+  ) {
+    final pending = summary.pedding;
+    final newThisMonth = summary.newApplication;
+    final processing = summary.processing;
+    final check = summary.check;
+
     return ResponsiveRow(
       children: [
         Expanded(
           child: _buildStatCard(
             context,
-            '總商店數',
-            '1,234',
+            title,
+            '$newThisMonth',
             Icons.store,
             Colors.blue,
+          ),
+        ),
+
+        const SizedBox(width: AdminSpacing.md),
+        Expanded(
+          child: _buildStatCard(
+            context,
+            '未審核',
+            '$pending',
+            Icons.sync,
+            Colors.purple,
+          ),
+        ),
+        const SizedBox(width: AdminSpacing.md),
+        Expanded(
+          child: _buildStatCard(
+            context,
+            '處理中',
+            '$processing',
+            Icons.sync,
+            Colors.purple,
           ),
         ),
         const SizedBox(width: AdminSpacing.md),
@@ -195,29 +257,9 @@ class ApplicationView extends GetView<ApplicationController> {
           child: _buildStatCard(
             context,
             '待審核',
-            '56',
+            '$check',
             Icons.pending,
             Colors.orange,
-          ),
-        ),
-        const SizedBox(width: AdminSpacing.md),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            '本月新增',
-            '89',
-            Icons.trending_up,
-            Colors.green,
-          ),
-        ),
-        const SizedBox(width: AdminSpacing.md),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            '活躍用戶',
-            '2,456',
-            Icons.people,
-            Colors.purple,
           ),
         ),
       ],
@@ -337,25 +379,31 @@ class ApplicationView extends GetView<ApplicationController> {
           '建立新的商店資料',
           Icons.add_business,
           Colors.blue,
-          () => Get.toNamed(Routes.applicationAdd),
+          () => Get.toNamed(
+            Routes.applicationAdd,
+          )?.then((_) => controller.getApplicationSummary()),
         ),
         const SizedBox(height: AdminSpacing.sm),
         _buildActionTile(
           context,
-          '商店進件',
+          '商店進件管理',
           '處理商店申請案件',
           Icons.storefront,
           Colors.green,
-          () => Get.toNamed(Routes.applicationRequest),
+          () => Get.toNamed(
+            Routes.applicationRequest,
+          )?.then((_) => controller.getApplicationSummary()),
         ),
         const SizedBox(height: AdminSpacing.sm),
         _buildActionTile(
           context,
-          '使用者管理',
-          '管理系統使用者',
+          '使用者推薦管理',
+          '使用者進件管理',
           Icons.people,
           Colors.purple,
-          () => Get.toNamed(Routes.applicationAdd),
+          () => Get.toNamed(
+            Routes.applicationUserRequest,
+          )?.then((_) => controller.getApplicationSummary()),
         ),
       ],
     );
@@ -372,7 +420,9 @@ class ApplicationView extends GetView<ApplicationController> {
             '建立新的商店資料',
             Icons.add_business,
             Colors.blue,
-            () => Get.toNamed(Routes.applicationAdd),
+            () => Get.toNamed(
+              Routes.applicationAdd,
+            )?.then((_) => controller.getApplicationSummary()),
           ),
         ),
         const SizedBox(width: AdminSpacing.md),
@@ -383,18 +433,22 @@ class ApplicationView extends GetView<ApplicationController> {
             '處理商店申請案件',
             Icons.storefront,
             Colors.green,
-            () => Get.toNamed(Routes.applicationRequest),
+            () => Get.toNamed(
+              Routes.applicationRequest,
+            )?.then((_) => controller.getApplicationSummary()),
           ),
         ),
         const SizedBox(width: AdminSpacing.md),
         Expanded(
           child: _buildActionCard(
             context,
-            '使用者管理',
-            '管理系統使用者',
+            '使用者推薦管理',
+            '管理系統使用者推薦',
             Icons.people,
             Colors.purple,
-            () => Get.toNamed(Routes.applicationAdd),
+            () => Get.toNamed(
+              Routes.applicationUserRequest,
+            )?.then((_) => controller.getApplicationSummary()),
           ),
         ),
       ],

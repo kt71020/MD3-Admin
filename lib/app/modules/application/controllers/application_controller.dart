@@ -1,5 +1,6 @@
 import 'package:admin/app/models/application/application_csv_model.dart';
 import 'package:admin/app/models/application/application_log_model.dart';
+import 'package:admin/app/models/application/application_summary_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin/app/services/auth_service.dart';
@@ -59,6 +60,11 @@ class ApplicationController extends GetxController {
   final totalItems = 0.obs;
   final pageOptions = [5, 30, 50, 100].obs;
 
+  final channel = 'SHOP'.obs;
+
+  // 統計摘要資料
+  final applicationSummary = Rxn<AppleicationSummaryModel>();
+
   @override
   void onInit() {
     super.onInit();
@@ -74,6 +80,8 @@ class ApplicationController extends GetxController {
     super.onReady();
     // 每次頁面準備就緒時清除錯誤狀態
     clearErrorState();
+    // 載入統計摘要
+    getApplicationSummary();
   }
 
   @override
@@ -498,13 +506,13 @@ class ApplicationController extends GetxController {
   /// ==========================================
   /// 取得進件資料列表
   /// ==========================================
-  Future<ApplicationModel?> getApplicationList() async {
+  Future<ApplicationModel?> getApplicationList(String channel) async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
-
-      final result = await _applicationService.getApplicationList();
+      this.channel.value = '';
+      final result = await _applicationService.getApplicationList(channel);
 
       if (result.isSuccess) {
         // 將 API 回應轉換成 ApplicationModel
@@ -514,6 +522,7 @@ class ApplicationController extends GetxController {
         applicationModel.value = model;
         applicationList.value = model.data;
         totalItems.value = model.count;
+        this.channel.value = channel;
 
         return model;
       } else {
@@ -906,33 +915,33 @@ class ApplicationController extends GetxController {
   /// ==========================================
 
   /// 設定每頁顯示數量
-  void setItemsPerPage(int items) {
+  void setItemsPerPage(int items, String channel) {
     itemsPerPage.value = items;
     currentPage.value = 1; // 重置到第一頁
-    getApplicationList(); // 重新載入資料
+    getApplicationList(channel); // 重新載入資料
   }
 
   /// 前往指定頁面
-  void goToPage(int page) {
+  void goToPage(int page, String channel) {
     if (page >= 1 && page <= totalPages) {
       currentPage.value = page;
-      getApplicationList();
+      getApplicationList(channel);
     }
   }
 
   /// 下一頁
-  void nextPage() {
+  void nextPage(String channel) {
     if (currentPage.value < totalPages) {
       currentPage.value++;
-      getApplicationList();
+      getApplicationList(channel);
     }
   }
 
   /// 上一頁
-  void previousPage() {
+  void previousPage(String channel) {
     if (currentPage.value > 1) {
       currentPage.value--;
-      getApplicationList();
+      getApplicationList(channel);
     }
   }
 
@@ -1010,6 +1019,7 @@ class ApplicationController extends GetxController {
       userName: application.userName,
       shopCity: application.shopCity,
       shopRegion: application.shopRegion,
+      channel: application.channel,
     );
     hasUnsavedChanges.value = false;
   }
@@ -1062,9 +1072,9 @@ class ApplicationController extends GetxController {
         editingApplication.value!.shopName,
         editingApplication.value!.shopTaxId ?? '',
         editingApplication.value!.shopPhone,
-        editingApplication.value!.shopContactName,
+        editingApplication.value!.shopContactName ?? '',
         editingApplication.value!.shopMobile ?? '',
-        editingApplication.value!.shopWebsite,
+        editingApplication.value!.shopWebsite ?? '',
         editingApplication.value!.shopEmail ?? '',
         editingApplication.value!.shopCity ?? '',
         editingApplication.value!.shopRegion ?? '',
@@ -1317,6 +1327,34 @@ class ApplicationController extends GetxController {
       }
     } catch (e) {
       throw Exception('儲存檔案失敗：$e');
+    }
+  }
+
+  /// ==========================================
+  /// 取得統計資料
+  /// ==========================================
+  Future<AppleicationSummaryModel?> getApplicationSummary() async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      final result = await _applicationService.getApplicationSummary();
+
+      if (result.isSuccess) {
+        final model = AppleicationSummaryModel.fromJson(result.data!);
+        debugPrint('🔄 取得統計資料成功：${model.channel.shop.totalApplication} 筆');
+        applicationSummary.value = model;
+        return model;
+      } else {
+        _handleError(result.error ?? '取得統計資料失敗');
+        return null;
+      }
+    } catch (e) {
+      _handleError('取得統計資料時發生錯誤：$e');
+      return null;
+    } finally {
+      isLoading.value = false;
     }
   }
 }

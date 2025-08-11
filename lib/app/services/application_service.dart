@@ -15,15 +15,20 @@ class ApplicationService {
   final _apiService = ApiService.instance;
 
   /// 取得進件資料列表
-  Future<ApiResult<Map<String, dynamic>>> getApplicationList() async {
+  Future<ApiResult<Map<String, dynamic>>> getApplicationList(
+    String channel,
+  ) async {
     final authService = AuthService.instance;
 
     // 檢查是否有有效的認證token
     if (authService.currentToken.isEmpty) {
       return ApiResult.error('請重新登入系統');
     }
-
-    return await _apiService.post(ApiUrls.getApplicationListAPI);
+    final requestBody = {"channel": channel};
+    return await _apiService.post(
+      ApiUrls.getApplicationListAPI,
+      data: requestBody,
+    );
   }
 
   /// 取得案件歷程紀錄
@@ -221,6 +226,25 @@ class ApplicationService {
       return ApiResult.success(result.data);
     } else {
       return ApiResult.error(result.error ?? '取得進件資料列表 CSV 失敗');
+    }
+  }
+
+  Future<ApiResult<Map<String, dynamic>>> getApplicationSummary() async {
+    final authService = AuthService.instance;
+
+    if (authService.currentToken.isEmpty) {
+      return ApiResult.error('請重新登入系統');
+    }
+
+    final result = await _apiService.post(
+      ApiUrls.applicationSummaryAPI,
+      data: {},
+    );
+
+    if (result.isSuccess) {
+      return ApiResult.success(result.data);
+    } else {
+      return ApiResult.error(result.error ?? '取得統計資料失敗');
     }
   }
 }
