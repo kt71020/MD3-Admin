@@ -214,7 +214,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 label: '聯絡人',
                 application: application,
                 fieldName: 'shopContactName',
-                getValue: (app) => app.shopContactName,
+                getValue: (app) => app.shopContactName ?? '',
                 canEdit: canEdit,
               ),
             ),
@@ -240,7 +240,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
                 label: '網站',
                 application: application,
                 fieldName: 'shopWebsite',
-                getValue: (app) => app.shopWebsite,
+                getValue: (app) => app.shopWebsite ?? '',
                 canEdit: canEdit,
               ),
             ),
@@ -1073,7 +1073,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
                     // 延遲一下再跳轉，讓 snackbar 有時間顯示
                     await Future.delayed(const Duration(milliseconds: 500));
                     Get.back(); // 返回列表頁面
-                    controller.getApplicationList(); // 重新載入列表
+                    controller.getApplicationList(
+                      application.channel,
+                    ); // 重新載入列表
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1159,7 +1161,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
     final success = await controller.caseClose(application.id);
     if (success) {
       Get.back(); // 返回列表頁面
-      controller.getApplicationList(); // 重新載入列表
+      controller.getApplicationList(application.channel); // 重新載入列表
     }
   }
 

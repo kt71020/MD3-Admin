@@ -7,7 +7,8 @@ import '../../../models/application/application_model.dart';
 import '../controllers/application_controller.dart';
 
 class ApplicationRequest extends StatefulWidget {
-  const ApplicationRequest({super.key});
+  final String channel;
+  const ApplicationRequest({super.key, required this.channel});
 
   @override
   State<ApplicationRequest> createState() => _ApplicationRequestState();
@@ -26,7 +27,7 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
 
     // 每次進入頁面時載入資料
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getApplicationList();
+      controller.getApplicationList(widget.channel);
     });
   }
 
@@ -66,7 +67,9 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => controller.getApplicationList(),
+                onPressed:
+                    () =>
+                        controller.getApplicationList(controller.channel.value),
                 child: const Text('重新載入'),
               ),
             ],
@@ -110,20 +113,26 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: () => controller.getApplicationList(),
+                onPressed:
+                    () =>
+                        controller.getApplicationList(controller.channel.value),
                 icon: const Icon(Icons.refresh),
                 label: const Text('重新整理'),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+
+          // 篩選按鈕群組（Bootstrap 5 風格）
+          _buildBootstrapFilterButtons(context),
           const SizedBox(height: 20),
 
           // 分頁控制
           _buildPaginationControls(context),
           const SizedBox(height: 16),
 
-          // 申請列表表格
-          _buildApplicationTable(context),
+          // 申請列表表格（需隨篩選/資料變動更新）
+          Obx(() => _buildApplicationTable(context)),
 
           const SizedBox(height: 16),
           // 分頁資訊和導航
@@ -131,6 +140,78 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
         ],
       ),
     );
+  }
+
+  /// Bootstrap 5 風格的篩選按鈕群組
+  Widget _buildBootstrapFilterButtons(BuildContext context) {
+    return Obx(() {
+      final ColorScheme cs = Theme.of(context).colorScheme;
+
+      Widget buildBtn({
+        required String text,
+        required String value,
+        required Color bg,
+        required Color fg,
+        required Color border,
+      }) {
+        final bool active = controller.requestFilter.value == value;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: OutlinedButton(
+            onPressed: () => controller.setRequestFilter(value),
+            style: OutlinedButton.styleFrom(
+              backgroundColor: active ? bg : Colors.transparent,
+              foregroundColor: active ? fg : cs.primary,
+              side: BorderSide(color: active ? border : cs.primary),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            child: Text(
+              text,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+      }
+
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          children: [
+            buildBtn(
+              text: '未核准',
+              value: 'PENDING_REVIEW',
+              bg: const Color(0xFFF8D7DA),
+              fg: const Color(0xFF842029),
+              border: const Color(0xFFF5C2C7),
+            ),
+            buildBtn(
+              text: '處理中',
+              value: 'IN_PROGRESS',
+              bg: const Color(0xFFFFECB5),
+              fg: const Color(0xFF664D03),
+              border: const Color(0xFFFFE69C),
+            ),
+            buildBtn(
+              text: '待複檢',
+              value: 'WAITING_REVIEW2',
+              bg: const Color(0xFFCFE2FF),
+              fg: const Color(0xFF084298),
+              border: const Color(0xFFB6D4FE),
+            ),
+            buildBtn(
+              text: '全部',
+              value: 'ALL',
+              bg: const Color(0xFFD1E7DD),
+              fg: const Color(0xFF0F5132),
+              border: const Color(0xFFBADBCC),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   /// 建立申請列表表格
@@ -375,7 +456,7 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
                 }).toList(),
             onChanged: (int? newValue) {
               if (newValue != null) {
-                controller.setItemsPerPage(newValue);
+                controller.setItemsPerPage(newValue, controller.channel.value);
               }
             },
           ),
@@ -395,7 +476,7 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
           IconButton(
             onPressed:
                 controller.currentPage.value > 1
-                    ? controller.previousPage
+                    ? () => controller.previousPage(controller.channel.value)
                     : null,
             icon: const Icon(Icons.chevron_left),
             tooltip: '上一頁',
@@ -409,7 +490,7 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
           IconButton(
             onPressed:
                 controller.currentPage.value < controller.totalPages
-                    ? controller.nextPage
+                    ? () => controller.nextPage(controller.channel.value)
                     : null,
             icon: const Icon(Icons.chevron_right),
             tooltip: '下一頁',

@@ -40,6 +40,8 @@ class ApplicationController extends GetxController {
   // 申請資料
   final applicationModel = Rxn<ApplicationModel>();
   final applicationList = <Application>[].obs;
+  // 申請列表過濾器：ALL | PENDING_REVIEW | IN_PROGRESS | WAITING_REVIEW2
+  final requestFilter = 'ALL'.obs;
 
   // 案件歷程紀錄
   final applicationLogModel = Rxn<ApplicationLogModel>();
@@ -947,14 +949,15 @@ class ApplicationController extends GetxController {
 
   /// 計算總頁數
   int get totalPages {
-    if (totalItems.value == 0) return 1;
-    return (totalItems.value / itemsPerPage.value).ceil();
+    final total = filteredApplicationList.length;
+    if (total == 0) return 1;
+    return (total / itemsPerPage.value).ceil();
   }
 
   /// 取得當前頁面的資料
   List<Application> get paginatedList {
-    // 首先按申請建立時間升序排序
-    final sortedList = List<Application>.from(applicationList);
+    // 套用過濾條件後，按申請建立時間升序排序
+    final sortedList = List<Application>.from(filteredApplicationList);
     sortedList.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     final startIndex = (currentPage.value - 1) * itemsPerPage.value;
@@ -970,15 +973,42 @@ class ApplicationController extends GetxController {
 
   /// 取得分頁資訊文字
   String get paginationInfo {
-    if (applicationList.isEmpty) return '共 0 筆';
+    final total = filteredApplicationList.length;
+    if (total == 0) return '共 0 筆';
 
     final startIndex = (currentPage.value - 1) * itemsPerPage.value + 1;
     final endIndex = (startIndex + itemsPerPage.value - 1).clamp(
       startIndex,
-      totalItems.value,
+      total,
     );
 
-    return '第 $startIndex - $endIndex 筆，共 ${totalItems.value} 筆';
+    return '第 $startIndex - $endIndex 筆，共 $total 筆';
+  }
+
+  /// 依據目前篩選條件回傳清單
+  List<Application> get filteredApplicationList {
+    switch (requestFilter.value) {
+      case 'PENDING_REVIEW':
+        return applicationList
+            .where(
+              (e) =>
+                  e.reviewStatus == 'PENDING' || e.reviewStatus == 'PENDDING',
+            )
+            .toList();
+      case 'IN_PROGRESS':
+        return applicationList.where((e) => e.status == '1').toList();
+      case 'WAITING_REVIEW2':
+        return applicationList.where((e) => e.status == '4').toList();
+      case 'ALL':
+      default:
+        return applicationList;
+    }
+  }
+
+  /// 設定過濾條件並重置頁碼
+  void setRequestFilter(String filter) {
+    requestFilter.value = filter;
+    currentPage.value = 1;
   }
 
   /// ==========================================
