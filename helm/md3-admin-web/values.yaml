@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  repository: kt71020/md3-admin
+  # Leave empty to default to .Chart.AppVersion; override in CI/CD: --set image.tag=$IMAGE_TAG
+  tag: ''
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: my-dockerhub-secret
+
+nameOverride: ''
+fullnameOverride: 'flutter-web'
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: '/'
+  hosts:
+    - host: md3-adm.uirapuka.com
+      paths:
+        - path: '/'
+          pathType: Prefix
+  tls:
+    - secretName: flutter-web-tls
+      hosts:
+        - md3-adm.uirapuka.com
+
+certManager:
+  createClusterIssuer: true
+  clusterIssuerName: letsencrypt-prod
+  email: kt71020@gmail.com
+  server: https://acme-v02.api.letsencrypt.org/directory
+  privateKeySecretName: letsencrypt-prod-private-key
+
+# Helm 建議用 --namespace 管理命名空間；若要由 Chart 建立可開啟下方設定
+namespace: adm-md3-web
+createNamespace: false
