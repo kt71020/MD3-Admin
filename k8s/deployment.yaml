@@ -1,0 +1,23 @@
+# 2. Deployment - Flutter Web + NGINX
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flutter-web
+  namespace: adm-md3-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flutter-web
+  template:
+    metadata:
+      labels:
+        app: flutter-web
+    spec:
+      imagePullSecrets:
+        - name: my-dockerhub-secret
+      containers:
+        - name: flutter-web
+          image: kt71020/md3-admin:0.0.5
+          ports:
+            - containerPort: 80
