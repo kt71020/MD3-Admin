@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../../../core/widgets/responsive_navigation.dart';
@@ -202,28 +203,44 @@ class DashboardView extends GetView<DashboardController> {
 
   /// 建立統計卡片
   Widget _buildStatsCards(BuildContext context) {
+    // 你這樣直接 toString()，數字一多就很醜，完全沒考慮 UX 啊！
+    // 建議用 intl 套件的 NumberFormat 來加上千分號，這是 Flutter 處理數字格式的標準做法
+
+    final numberFormat = NumberFormat.decimalPattern('zh_TW');
+    String userCount = numberFormat.format(
+      controller.admsSummary.value.userCount,
+    );
+    String shopCount = numberFormat.format(
+      controller.admsSummary.value.shopCount,
+    );
+    String groupCount = numberFormat.format(
+      controller.admsSummary.value.groupCount,
+    );
+    // String userCount = controller.admsSummary.value.userCount.toString();
+    // String shopCount = controller.admsSummary.value.shopCount.toString();
+    // String groupCount = controller.admsSummary.value.groupCount.toString();
     final stats = [
       {
         'title': '總用戶數',
-        'value': controller.totalUsers.value.toString(),
+        'value': userCount,
         'icon': Icons.people,
         'color': Colors.blue,
       },
       {
-        'title': '總訂單數',
-        'value': controller.totalOrders.value.toString(),
+        'title': '總商店數',
+        'value': shopCount,
         'icon': Icons.shopping_cart,
         'color': Colors.green,
       },
+      // {
+      //   'title': '總收入',
+      //   'value': '\$${controller.totalRevenue.value.toStringAsFixed(2)}',
+      //   'icon': Icons.attach_money,
+      //   'color': Colors.orange,
+      // },
       {
-        'title': '總收入',
-        'value': '\$${controller.totalRevenue.value.toStringAsFixed(2)}',
-        'icon': Icons.attach_money,
-        'color': Colors.orange,
-      },
-      {
-        'title': '活躍產品',
-        'value': controller.activeProducts.value.toString(),
+        'title': '活躍群組數',
+        'value': groupCount,
         'icon': Icons.inventory,
         'color': Colors.purple,
       },

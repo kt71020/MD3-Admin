@@ -57,6 +57,9 @@ class ApiUrls {
 
   // === API Endpoints ===
 
+  // Adms 相關 endpoints
+  static String get admsSummaryAPI => _admsEndpoints['admsSummary']!;
+
   // User 相關 endpoints
   static String get loginCheckAPI => _userEndpoints['loginCheck']!;
   static String get getEmployeeListAPI => _userEndpoints['employeeList']!;
@@ -106,6 +109,11 @@ class ApiUrls {
     'applicationCsv': '/api/v2/adm/application/get_csv_file',
     'applicationUpdate': '/api/v2/adm/application/update_application',
     'applicationSummary': '/api/v2/adm/application/fetch_summary',
+  };
+
+  // Adms 相關 endpoints
+  static const _admsEndpoints = {
+    'admsSummary': '/api/v2/adm/adms/fetch_summary',
   };
 
   // === Helper Methods ===

@@ -1,12 +1,21 @@
+import 'package:admin/app/models/adms/adms_summary_model.dart';
+import 'package:admin/app/services/adms_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../services/auth_service.dart';
 
 class DashboardController extends GetxController {
+  // 服務實例
+  final _admsService = AdmsService.instance;
   // 統計數據
   final RxInt totalUsers = 0.obs;
   final RxInt totalOrders = 0.obs;
   final RxDouble totalRevenue = 0.0.obs;
   final RxInt activeProducts = 0.obs;
+
+  /// 統計數據
+  final Rx<AdmsSummaryModel> admsSummary =
+      AdmsSummaryModel(groupCount: 0, userCount: 0, shopCount: 0).obs;
 
   // 加載狀態
   final RxBool isLoading = false.obs;
@@ -20,8 +29,22 @@ class DashboardController extends GetxController {
     loadDashboardData();
   }
 
+  /// ==========================================
+  /// 取得統計資料
+  /// ==========================================
+  Future<void> getAdmsSummary() async {
+    final result = await _admsService.getAdmsSummary();
+    if (result.isSuccess) {
+      admsSummary.value = AdmsSummaryModel.fromJson(result.data!);
+      debugPrint('admsSummary: ${admsSummary.value.toJson()}');
+    } else {
+      Get.snackbar('錯誤', '載入數據失敗: ${result.error}');
+    }
+  }
+
   /// 載入儀表板數據
   Future<void> loadDashboardData() async {
+    await getAdmsSummary();
     try {
       isLoading.value = true;
 

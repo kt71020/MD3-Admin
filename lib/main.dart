@@ -78,7 +78,20 @@ class MyApp extends StatelessWidget {
             useMaterial3: true, // 啟用 Material 3
             // fontFamily: 'NotoSansTC', // 預設字型
             textTheme: appTextTheme, // 使用自訂的 TextTheme
-            colorSchemeSeed: Colors.green, // 可選，提供種子色
+            // 全域背景：將整體背景、Scaffold 與 surface 統一為 grey 50
+            scaffoldBackgroundColor: Colors.grey, // 先填入基色避免空值
+            canvasColor: Colors.grey, // 先填入基色避免空值
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(255, 10, 14, 84),
+              brightness: Brightness.light,
+            ).copyWith(
+              surface: Colors.grey.shade50,
+              background: Colors.grey.shade50,
+            ),
+          ).copyWith(
+            // 明確指定實際色階（避免上一段臨時值造成誤會）
+            scaffoldBackgroundColor: Colors.grey.shade50,
+            canvasColor: Colors.grey.shade50,
           ),
           // 使用 ResponsiveFramework 包裝應用
           builder:
