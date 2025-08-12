@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 pubspec.lock
 node_modules/
+k8s/.env
