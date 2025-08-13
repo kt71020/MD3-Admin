@@ -2,12 +2,9 @@
 # 使用官方 NGINX 作為基礎 image
 FROM nginx:alpine
 
-# 刪除預設的 nginx 靜態網站內容
-# RUN rm -rf /usr/share/nginx/html/*
 
-
-# 複製自定義 NGINX 設定檔（專案中的 MD3-Admin/Docker/nginx/nginx.conf）
-# COPY Docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+# 複製完整的 NGINX 主設定檔到正確位置，避免在 conf.d 中出現不允許的頂層指令
+COPY Docker/nginx/nginx.conf /etc/nginx/nginx.conf
 
 
 
