@@ -46,3 +46,4 @@ app.*.map.json
 pubspec.lock
 node_modules/
 k8s/.env
+helm/.env

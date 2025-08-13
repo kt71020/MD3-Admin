@@ -1,32 +1,64 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 class ApiUrls {
-  // 環境配置
+  // 透過 --dart-define 注入的變數（Web/Release 推薦使用）
+  static const String _apiUrlDefine = String.fromEnvironment(
+    'API_URL',
+    defaultValue: '',
+  );
+  static const String _proxyUrlDefine = String.fromEnvironment(
+    'PROXY_URL',
+    defaultValue: '',
+  );
+  static const String _redisUrlDefine = String.fromEnvironment(
+    'REDIS_URL',
+    defaultValue: '',
+  );
+
+  // 預設 URL（最後保底）
   static const _defaultUrls = {
-    'production': 'http://192.168.0.80:5120',
+    // 正式預設網址（避免 Web 未帶參數時意外打到 dev）
+    'production': 'https://producer.uirapuka.com',
+    // 開發裝置預設
     'androidDev': 'http://10.0.2.2:5120',
     'iosDev': 'http://localhost:5120',
-    'web': 'http://dev.uirapuka.com:5120',
+    // Web 未設定時改為走正式，不再預設 dev
+    'webDefault': 'https://producer.uirapuka.com',
     'redis': 'https://producer.uirapuka.com',
   };
 
   /// 取得主要 API 基礎 URL
   static String get baseUrl {
-    // 優先使用環境變數
+    // 1) 優先使用 --dart-define（適用 Web 與任意平台 Release）
+    if (_apiUrlDefine.isNotEmpty) {
+      if (!kReleaseMode)
+        debugPrint('🔄 Using --dart-define API_URL: $_apiUrlDefine');
+      return _apiUrlDefine;
+    }
+
+    // 2) 其次使用 .env（僅行動/桌面；Web 預設不載入）
     final envUrl = _getEnvValue('API_URL');
     if (envUrl.isNotEmpty) return envUrl;
 
     // Web 環境處理
     if (kIsWeb) {
-      final proxyUrl = _getEnvValue('PROXY_URL');
-      if (proxyUrl.isNotEmpty) {
-        debugPrint('🔄 Using proxy: $proxyUrl');
-        return proxyUrl;
+      // 3) Web 若有 --dart-define/ENV 的 PROXY_URL 亦可覆蓋
+      final proxyFromDefine = _proxyUrlDefine;
+      if (proxyFromDefine.isNotEmpty) {
+        if (!kReleaseMode)
+          debugPrint('🔄 Using --dart-define PROXY_URL: $proxyFromDefine');
+        return proxyFromDefine;
       }
-      debugPrint('🌐 Using direct backend connection');
-      return _defaultUrls['web']!;
+      final proxyFromEnv = _getEnvValue('PROXY_URL');
+      if (proxyFromEnv.isNotEmpty) {
+        if (!kReleaseMode)
+          debugPrint('🔄 Using PROXY_URL from .env: $proxyFromEnv');
+        return proxyFromEnv;
+      }
+      if (!kReleaseMode)
+        debugPrint('🌐 Using Web default (production) backend connection');
+      return _defaultUrls['webDefault']!;
     }
 
     // 平台特定 URL
@@ -34,24 +66,36 @@ class ApiUrls {
   }
 
   /// 取得 Redis URL
-  static String get redisUrl =>
-      _getEnvValue('REDIS_URL', fallback: _defaultUrls['redis']!);
+  static String get redisUrl {
+    if (_redisUrlDefine.isNotEmpty) return _redisUrlDefine;
+    return _getEnvValue('REDIS_URL', fallback: _defaultUrls['redis']!);
+  }
 
   /// 取得環境變數值
   static String _getEnvValue(String key, {String fallback = ''}) {
     if (!dotenv.isInitialized) return fallback;
-    debugPrint('🔄 取得環境變數：$key');
-    return dotenv.get(key, fallback: fallback);
+    final value = dotenv.get(key, fallback: fallback);
+    if (!kReleaseMode)
+      debugPrint('🔄 取得環境變數：$key -> ${value.isNotEmpty ? '[set]' : '[empty]'}');
+    return value;
   }
 
   /// 取得平台特定 URL
   static String _getPlatformUrl() {
-    if (Platform.isAndroid && !kReleaseMode) {
-      return _defaultUrls['androidDev']!;
+    // 在 Web 不會走到這裡（上方已經先行判斷 kIsWeb）
+    // 避免在 Web 匯入 dart:io，改用 defaultTargetPlatform 判斷
+    if (!kReleaseMode) {
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.android:
+          return _defaultUrls['androidDev']!;
+        case TargetPlatform.iOS:
+          return _defaultUrls['iosDev']!;
+        default:
+          // 其他桌面平台開發預設也走本機
+          return _defaultUrls['iosDev']!;
+      }
     }
-    if (Platform.isIOS && !kReleaseMode) {
-      return _defaultUrls['iosDev']!;
-    }
+    // Release 一律走正式
     return _defaultUrls['production']!;
   }
 
