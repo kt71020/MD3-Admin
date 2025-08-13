@@ -1,0 +1,11 @@
+To install/upgrade with a specific image tag (avoid hardcoding in manifests):
+
+  helm upgrade --install md3-admin-web ./helm/md3-admin-web \
+    --namespace adm-md3-web --create-namespace \
+    --set image.tag=$IMAGE_TAG
+
+Ingress host:
+{{- range .Values.ingress.hosts }}
+  - {{ .host }}
+{{- end }}
+

@@ -1,0 +1,40 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "md3-admin-web.fullname" . }}-ingress
+  labels:
+    {{- include "md3-admin-web.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.certManager.clusterIssuerName }}
+    cert-manager.io/cluster-issuer: {{ .Values.certManager.clusterIssuerName | quote }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- toYaml .Values.ingress.tls | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path | quote }}
+            pathType: {{ .pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "md3-admin-web.fullname" $ }}-service
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+ 
+
