@@ -1,0 +1,7 @@
+apiVersion: v2
+name: md3-admin-web
+description: Helm chart for MD3 Admin Flutter Web on NGINX
+type: application
+version: 0.1.0
+# Default application version; override via --set image.tag=... in CI/CD
+appVersion: '0.0.5'
