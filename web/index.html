@@ -1,24 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
     <base href="$FLUTTER_BASE_HREF" />
 
     <meta charset="UTF-8" />
     <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
-    <meta name="description" content="A new Flutter project." />
+    <meta name="description" content="md3_web_admin.uirapuka.com" />
 
     <!-- Google Sign-In Client ID for Web -->
     <meta
@@ -38,30 +25,6 @@
     <title>md3_web_admin</title>
     <link rel="manifest" href="manifest.json" />
 
-    <!-- Firebase SDKs - 使用現代版本 -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-    <!-- Firebase Configuration -->
-    <script>
-      // Firebase 配置
-      const firebaseConfig = {
-        apiKey: 'AIzaSyDGECPQu5Z4xudlX7Gg1HNvobA3Xs0BXc8',
-        authDomain: 'must-dine-3.firebaseapp.com',
-        projectId: 'must-dine-3',
-        storageBucket: 'must-dine-3.firebasestorage.app',
-        messagingSenderId: '55834580879',
-        appId: '1:55834580879:web:ae05b720b04993b4681dfa',
-        measurementId: 'G-BF76WDFZZD',
-      };
-
-      // 初始化 Firebase
-      firebase.initializeApp(firebaseConfig);
-
-      // 確保 Firebase 準備就緒
-      window.flutterFirebaseConfig = firebaseConfig;
-    </script>
     <style>
       body {
         background-color: #fafafa;
