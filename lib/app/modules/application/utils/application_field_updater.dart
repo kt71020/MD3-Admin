@@ -47,6 +47,14 @@ class ApplicationFieldUpdater {
           fieldName == 'shopNote'
               ? (value.isEmpty ? null : value)
               : current.shopNote,
+      shopCity:
+          fieldName == 'shopCity'
+              ? (value.isEmpty ? null : value)
+              : current.shopCity,
+      shopRegion:
+          fieldName == 'shopRegion'
+              ? (value.isEmpty ? null : value)
+              : current.shopRegion,
     );
   }
 

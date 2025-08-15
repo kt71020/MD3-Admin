@@ -33,12 +33,14 @@ echo -e "${BLUE}🚀 MD3 Admin Web Flutter更新開始${NC}"
 if flutter build web -h | grep -q "web-renderer"; then
   flutter build web --release \
     --dart-define=API_URL=https://md3-api.uirapuka.com \
+    --dart-define=PROXY_URL=https://md3-api.uirapuka.com \
     --web-renderer canvaskit \
     --pwa-strategy=none \
     --dart-define=FLUTTER_WEB_CANVASKIT_URL=/canvaskit/
 else
   flutter build web --release \
     --dart-define=API_URL=https://md3-api.uirapuka.com \
+    --dart-define=PROXY_URL=https://md3-api.uirapuka.com \
     --pwa-strategy=none \
     --dart-define=FLUTTER_WEB_USE_SKIA=true \
     --dart-define=FLUTTER_WEB_CANVASKIT_URL=/canvaskit/

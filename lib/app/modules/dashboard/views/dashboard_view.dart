@@ -442,12 +442,45 @@ class DashboardView extends GetView<DashboardController> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
+              // 避免輕微寬度四捨五入造成 RenderFlex 溢位
+              columnSpacing: 24.0,
+              horizontalMargin: 12.0,
               columns: const [
-                DataColumn(label: Text('訂單編號')),
-                DataColumn(label: Text('客戶')),
-                DataColumn(label: Text('金額')),
-                DataColumn(label: Text('狀態')),
-                DataColumn(label: Text('日期')),
+                DataColumn(
+                  label: Text(
+                    '訂單編號',
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    '客戶',
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    '金額',
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    '狀態',
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    '日期',
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                ),
               ],
               rows: [
                 _buildDataRow('#001', '張小明', '\$299.99', '已完成', '2024-01-15'),

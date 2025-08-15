@@ -1,3 +1,4 @@
+import 'package:admin/app/constants/api_urls.dart';
 import 'package:admin/app/core/utils/responsive_utils.dart';
 import 'package:admin/app/core/widgets/responsive_layout.dart';
 import 'package:admin/app/routes/app_pages.dart';
@@ -5,15 +6,40 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:admin/app/modules/application/utils/smart_image.dart';
 import '../../../models/application/application_model.dart';
 import '../../../models/application/application_log_model.dart';
 import '../controllers/application_controller.dart';
 // 條件導入：Web 平台使用 dart:html，其他平台使用 url_launcher
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:html' as html if (dart.library.html) 'dart:html';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 class ApplicationEdit extends GetView<ApplicationController> {
   const ApplicationEdit({super.key});
+
+  // 必填欄位（欄位名稱）
+  static const Set<String> _requiredFields = {
+    'shopName',
+    'shopPhone',
+    'shopCity',
+    'shopRegion',
+    'shopAddress',
+  };
+
+  // 圖片白名單（可直連顯示，不強制走 proxy）
+  static const Set<String> _imageWhitelistHosts = {
+    // 範例：依實際情境調整
+    'i.imgur.com',
+    'images.unsplash.com',
+    'static.uirapuka.com',
+    'cdn.uirapuka.com',
+  };
+
+  bool _isWhitelistedHost(String url) {
+    final host = Uri.tryParse(url)?.host ?? '';
+    return _imageWhitelistHosts.contains(host);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -343,8 +369,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
                         Text(
                           '您有未儲存的變更',
                           style: TextStyle(
+                            fontSize: 12,
                             color: Colors.orange.shade700,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -409,7 +436,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             ),
             isDense: true,
             filled: true,
-            fillColor: Colors.green.shade50, // 改為淺綠色背景更明顯
+            fillColor: Colors.grey.shade200, // 改為淺綠色背景更明顯
           ),
           style: const TextStyle(
             color: Colors.black, // 確保文字清晰可讀
@@ -426,13 +453,31 @@ class ApplicationEdit extends GetView<ApplicationController> {
     bool enabled = true,
     int maxLines = 1,
     void Function(String)? onChanged,
+    String? fieldName,
+    bool isRequired = false,
   }) {
+    final bool showError = enabled && isRequired && value.trim().isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+            if (isRequired) ...[
+              const SizedBox(width: 4),
+              const Text(
+                '*',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 2),
         TextFormField(
@@ -466,20 +511,21 @@ class ApplicationEdit extends GetView<ApplicationController> {
               borderSide: const BorderSide(color: Colors.black12, width: 1),
               borderRadius: BorderRadius.circular(8),
             ),
+            errorText: showError ? '此欄位為必填' : null,
             contentPadding: EdgeInsets.symmetric(
               horizontal: 8,
               vertical: maxLines > 1 ? 12 : 6, // 多行時增加垂直內距
             ),
             isDense: maxLines == 1, // 只有單行時才使用 isDense
-            // 統一背景色：可編輯時白色，不可編輯時淺灰色
-            filled: !enabled,
-            fillColor: !enabled ? Colors.grey.shade100 : null,
+            // 統一背景色：可編輯時green.shade100，不可編輯時orange.shade100
+            filled: true,
+            fillColor: enabled ? Colors.green.shade50 : Colors.orange.shade50,
           ),
           style: TextStyle(
             // 統一文字色：可編輯時黑色，不可編輯時灰色
             color:
                 enabled ? const Color.fromARGB(255, 26, 77, 27) : Colors.black,
-            fontWeight: enabled ? FontWeight.w800 : FontWeight.w500,
+            fontWeight: enabled ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ],
@@ -498,16 +544,18 @@ class ApplicationEdit extends GetView<ApplicationController> {
     // 以編輯中資料為優先來源，避免重建後回退到舊資料
     final effectiveApplication =
         controller.editingApplication.value ?? application;
-
+    // 如果不可編輯，則顯示只讀表單欄位
     if (!canEdit) {
       return _buildUnifiedFormField(
         label: label,
         value: getValue(effectiveApplication),
         enabled: false,
         maxLines: maxLines,
+        fieldName: fieldName,
+        isRequired: _requiredFields.contains(fieldName),
       );
     }
-
+    // 如果可編輯，則顯示編輯表單欄位
     return _buildUnifiedFormField(
       label: label,
       value: getValue(effectiveApplication),
@@ -516,6 +564,8 @@ class ApplicationEdit extends GetView<ApplicationController> {
       onChanged: (value) {
         controller.updateApplicationField(fieldName, value);
       },
+      fieldName: fieldName,
+      isRequired: _requiredFields.contains(fieldName),
     );
   }
 
@@ -854,20 +904,26 @@ class ApplicationEdit extends GetView<ApplicationController> {
           label: const Text('儲存'),
         ),
         const SizedBox(width: 16),
-        ElevatedButton.icon(
-          onPressed: () => _downloadCSV(context, application),
-          icon: const Icon(Icons.download, color: Colors.white),
-          label: const Text('下載 CSV 檔案'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            foregroundColor: Theme.of(context).colorScheme.onSecondary,
+        Obx(
+          () => ElevatedButton.icon(
+            onPressed:
+                controller.hasUnsavedChanges.value
+                    ? null
+                    : () => _downloadCSV(context, application),
+            icon: const Icon(Icons.download, color: Colors.white),
+            label: const Text('下載 CSV 檔案'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+            ),
           ),
         ),
         const SizedBox(width: 16),
         Obx(
           () => ElevatedButton.icon(
             onPressed:
-                controller.isApiUploading.value
+                (controller.isApiUploading.value ||
+                        controller.hasUnsavedChanges.value)
                     ? null
                     : () => _uploadCSVAndAddShop(context, application),
             icon:
@@ -1072,10 +1128,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
 
                     // 延遲一下再跳轉，讓 snackbar 有時間顯示
                     await Future.delayed(const Duration(milliseconds: 500));
-                    Get.back(); // 返回列表頁面
-                    controller.getApplicationList(
-                      application.channel,
-                    ); // 重新載入列表
+                    Get.toNamed(Routes.applicationRequest); // 返回列表頁
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1125,6 +1178,9 @@ class ApplicationEdit extends GetView<ApplicationController> {
 
   /// 儲存申請
   void _saveApplication(BuildContext context, Application application) async {
+    final effective = controller.editingApplication.value ?? application;
+    final ok = controller.ensureRequiredFields(effective, action: '儲存');
+    if (!ok) return;
     final success = await controller.saveApplicationData();
     if (success) {
       // 可以選擇是否返回列表頁面或保持在當前頁面
@@ -1134,6 +1190,20 @@ class ApplicationEdit extends GetView<ApplicationController> {
 
   /// 下載 CSV 檔案
   void _downloadCSV(BuildContext context, Application application) async {
+    // 下載前檢查未儲存變更與必填欄位
+    if (controller.hasUnsavedChanges.value) {
+      Get.snackbar(
+        '⚠️ 無法下載',
+        '有未儲存的變更，請先儲存後再下載 CSV。',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
+      );
+      return;
+    }
+    final effective = controller.editingApplication.value ?? application;
+    final ok = controller.ensureRequiredFields(effective, action: '下載 CSV');
+    if (!ok) return;
     // 使用 Controller 中的新方法來下載 CSV
     await controller.downloadCsvFile(application.id, '1', application.shopName);
   }
@@ -1143,6 +1213,16 @@ class ApplicationEdit extends GetView<ApplicationController> {
     BuildContext context,
     Application application,
   ) async {
+    if (controller.hasUnsavedChanges.value) {
+      Get.snackbar(
+        '⚠️ 無法上傳',
+        '有未儲存的變更，請先儲存後再上傳 CSV。',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
+      );
+      return;
+    }
     final success = await controller.uploadCSVAndAddShop(application.id);
     if (success) {
       // 更新 status 為 4 等待複檢
@@ -1226,141 +1306,21 @@ class ApplicationEdit extends GetView<ApplicationController> {
     }
   }
 
-  /// 建立 Proxy 圖片載入器
+  /// 建立 Proxy 圖片載入器（智慧載圖）
   Widget _buildProxyImage(
     String originalImageUrl, {
     double? width,
     double? height,
     BoxFit fit = BoxFit.cover,
   }) {
-    // 轉換為 proxy URL
-    final String proxyUrl = _convertToProxyUrl(originalImageUrl);
-
-    return Image.network(
-      proxyUrl,
+    return SmartImage(
+      originalImageUrl: originalImageUrl,
       width: width,
       height: height,
       fit: fit,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-
-        return Container(
-          color: Colors.grey.shade50,
-          width: width,
-          height: height,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    value:
-                        loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '載入圖片中...',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                ),
-                if (loadingProgress.expectedTotalBytes != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%',
-                    style: TextStyle(
-                      color: Colors.blue.shade600,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        debugPrint('🖼️ Proxy 圖片載入失敗: $error');
-        debugPrint('📍 Proxy URL: $proxyUrl');
-        debugPrint('📍 原始 URL: $originalImageUrl');
-
-        return Container(
-          color: Colors.red.shade50,
-          width: width,
-          height: height,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: Colors.red.shade400,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '圖片載入失敗',
-                    style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Proxy Server 可能無法存取此圖片',
-                    style: TextStyle(color: Colors.red.shade600, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => Get.forceAppUpdate(),
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('重試'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade600,
-                          side: BorderSide(color: Colors.red.shade300),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () => _openImageInNewTab(originalImageUrl),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: const Text('直接開啟'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade600,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      convertToProxyUrl: _convertToProxyUrl,
+      onOpenDirect: _openImageInNewTab,
+      isWhitelistedHost: _isWhitelistedHost(originalImageUrl),
     );
   }
 
@@ -1369,7 +1329,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
     if (originalImageUrl.isEmpty) return '';
 
     // ✅ 切換回 Perl Dancer2 Proxy Server
-    final String proxyBaseUrl = 'http://dev.uirapuka.com:5120/api/proxy';
+    final String proxyBaseUrl = '${ApiUrls.proxyUrl}/api/proxy';
 
     // URL 編碼原始圖片 URL
     final String encodedUrl = Uri.encodeComponent(originalImageUrl);
@@ -1782,3 +1742,5 @@ class ApplicationEdit extends GetView<ApplicationController> {
     );
   }
 }
+
+// 已移至共用元件 SmartImage（lib/app/modules/application/utils/smart_image.dart）

@@ -162,6 +162,10 @@ class ApplicationView extends GetView<ApplicationController> {
   Widget _buildMainContent(BuildContext context) {
     return Column(
       children: [
+        // 快速操作區域
+        _buildQuickActions(context),
+
+        const SizedBox(height: AdminSpacing.lg),
         // 統計概覽區域
         _buildStatsOverview(
           context,
@@ -177,8 +181,11 @@ class ApplicationView extends GetView<ApplicationController> {
                 check: 0,
                 newApplication: 0,
                 processing: 0,
+                activeApplication: 0,
               ),
+          'SHOP',
         ),
+
         // 統計概覽區域
         _buildStatsOverview(
           context,
@@ -194,13 +201,10 @@ class ApplicationView extends GetView<ApplicationController> {
                 check: 0,
                 newApplication: 0,
                 processing: 0,
+                activeApplication: 0,
               ),
+          'USER',
         ),
-        const SizedBox(height: AdminSpacing.lg),
-
-        // 快速操作區域
-        _buildQuickActions(context),
-
         const SizedBox(height: AdminSpacing.lg),
 
         // 最近活動區域
@@ -214,6 +218,7 @@ class ApplicationView extends GetView<ApplicationController> {
     BuildContext context,
     String title,
     ApplicationSummary summary,
+    String channel,
   ) {
     final pending = summary.pedding;
     final newThisMonth = summary.newApplication;
@@ -227,8 +232,10 @@ class ApplicationView extends GetView<ApplicationController> {
             context,
             title,
             '$newThisMonth',
-            Icons.store,
+            Icons.storefront,
             Colors.blue,
+            'ALL',
+            channel,
           ),
         ),
 
@@ -238,8 +245,10 @@ class ApplicationView extends GetView<ApplicationController> {
             context,
             '未審核',
             '$pending',
-            Icons.sync,
+            Icons.pending_actions,
             Colors.purple,
+            'PENDING_REVIEW',
+            channel,
           ),
         ),
         const SizedBox(width: AdminSpacing.md),
@@ -248,8 +257,10 @@ class ApplicationView extends GetView<ApplicationController> {
             context,
             '處理中',
             '$processing',
-            Icons.sync,
+            Icons.integration_instructions,
             Colors.purple,
+            'IN_PROGRESS',
+            channel,
           ),
         ),
         const SizedBox(width: AdminSpacing.md),
@@ -258,8 +269,10 @@ class ApplicationView extends GetView<ApplicationController> {
             context,
             '待審核',
             '$check',
-            Icons.pending,
+            Icons.approval_rounded,
             Colors.orange,
+            'WAITING_REVIEW',
+            channel,
           ),
         ),
       ],
@@ -273,71 +286,87 @@ class ApplicationView extends GetView<ApplicationController> {
     String value,
     IconData icon,
     Color color,
+    String filter,
+    String channel,
   ) {
+    debugPrint('🔄 Filter value: $filter');
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        child: Card(
-          elevation: context.responsive(mobile: 2.0, tablet: 4.0, desktop: 6.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AdminSpacing.md),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(
-              context.responsive(mobile: 16.0, tablet: 20.0, desktop: 24.0),
+        child: GestureDetector(
+          onTap: () {
+            final route =
+                channel == 'USER'
+                    ? '/application/user/request/$filter'
+                    : '/application/request/$filter';
+            Get.toNamed(route);
+          },
+          child: Card(
+            elevation: context.responsive(
+              mobile: 2.0,
+              tablet: 4.0,
+              desktop: 6.0,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AdminSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AdminSpacing.sm),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: color,
-                        size: context.responsive(
-                          mobile: 20.0,
-                          tablet: 24.0,
-                          desktop: 28.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AdminSpacing.md),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(
+                context.responsive(mobile: 16.0, tablet: 20.0, desktop: 24.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AdminSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AdminSpacing.sm),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: color,
+                          size: context.responsive(
+                            mobile: 20.0,
+                            tablet: 24.0,
+                            desktop: 28.0,
+                          ),
                         ),
                       ),
+                      Icon(
+                        Icons.more_vert,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AdminSpacing.md),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.responsiveFontSize(context, 28),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    Icon(
-                      Icons.more_vert,
+                  ),
+                  const SizedBox(height: AdminSpacing.xs),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.responsiveFontSize(context, 14),
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.4),
-                      size: 20,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AdminSpacing.md),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: ResponsiveUtils.responsiveFontSize(context, 28),
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                ),
-                const SizedBox(height: AdminSpacing.xs),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: ResponsiveUtils.responsiveFontSize(context, 14),
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -371,6 +400,12 @@ class ApplicationView extends GetView<ApplicationController> {
 
   /// 手機版快速操作
   Widget _buildMobileQuickActions(BuildContext context) {
+    int activeUserApplication =
+        controller.applicationSummary.value?.channel.user.activeApplication ??
+        0;
+    int activeShopApplication =
+        controller.applicationSummary.value?.channel.shop.activeApplication ??
+        0;
     return Column(
       children: [
         _buildActionTile(
@@ -387,23 +422,31 @@ class ApplicationView extends GetView<ApplicationController> {
         _buildActionTile(
           context,
           '商店進件管理',
-          '處理商店申請案件',
+          '處理商店申請案件 ',
           Icons.storefront,
           Colors.green,
-          () => Get.toNamed(
-            Routes.applicationRequest,
-          )?.then((_) => controller.getApplicationSummary()),
+          () {
+            if (activeShopApplication > 0) {
+              Get.toNamed(
+                Routes.applicationRequest,
+              )?.then((_) => controller.getApplicationSummary());
+            }
+          },
         ),
         const SizedBox(height: AdminSpacing.sm),
         _buildActionTile(
           context,
           '使用者推薦管理',
-          '使用者進件管理',
+          '使用者進件管理 ',
           Icons.people,
           Colors.purple,
-          () => Get.toNamed(
-            Routes.applicationUserRequest,
-          )?.then((_) => controller.getApplicationSummary()),
+          () {
+            if (activeUserApplication > 0) {
+              Get.toNamed(
+                Routes.applicationUserRequest,
+              )?.then((_) => controller.getApplicationSummary());
+            }
+          },
         ),
       ],
     );
@@ -411,6 +454,12 @@ class ApplicationView extends GetView<ApplicationController> {
 
   /// 桌面版快速操作
   Widget _buildDesktopQuickActions(BuildContext context) {
+    int activeUserApplication =
+        controller.applicationSummary.value?.channel.user.activeApplication ??
+        0;
+    int activeShopApplication =
+        controller.applicationSummary.value?.channel.shop.activeApplication ??
+        0;
     return Row(
       children: [
         Expanded(
@@ -429,13 +478,16 @@ class ApplicationView extends GetView<ApplicationController> {
         Expanded(
           child: _buildActionCard(
             context,
-            '商店進件',
+            '商店進件管理',
             '處理商店申請案件',
             Icons.storefront,
             Colors.green,
-            () => Get.toNamed(
-              Routes.applicationRequest,
-            )?.then((_) => controller.getApplicationSummary()),
+            () =>
+                activeShopApplication != 0
+                    ? Get.toNamed(
+                      Routes.applicationRequest,
+                    )?.then((_) => controller.getApplicationSummary())
+                    : null,
           ),
         ),
         const SizedBox(width: AdminSpacing.md),
@@ -446,9 +498,12 @@ class ApplicationView extends GetView<ApplicationController> {
             '管理系統使用者推薦',
             Icons.people,
             Colors.purple,
-            () => Get.toNamed(
-              Routes.applicationUserRequest,
-            )?.then((_) => controller.getApplicationSummary()),
+            () =>
+                activeUserApplication != 0
+                    ? Get.toNamed(
+                      Routes.applicationUserRequest,
+                    )?.then((_) => controller.getApplicationSummary())
+                    : null,
           ),
         ),
       ],

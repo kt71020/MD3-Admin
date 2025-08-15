@@ -14,13 +14,13 @@ class ApplicationLogModel {
   int status;
   String message;
   int count;
-  List<ApplicationLog> applicationLog;
+  List<ApplicationLog>? applicationLog;
 
   ApplicationLogModel({
     required this.status,
     required this.message,
     required this.count,
-    required this.applicationLog,
+    this.applicationLog,
   });
 
   factory ApplicationLogModel.fromJson(Map<String, dynamic> json) =>
@@ -28,18 +28,24 @@ class ApplicationLogModel {
         status: json["status"],
         message: json["message"],
         count: json["count"],
-        applicationLog: List<ApplicationLog>.from(
-          json["application_log"].map((x) => ApplicationLog.fromJson(x)),
-        ),
+        applicationLog:
+            json["application_log"] != null
+                ? List<ApplicationLog>.from(
+                  json["application_log"].map(
+                    (x) => ApplicationLog.fromJson(x),
+                  ),
+                )
+                : null,
       );
 
   Map<String, dynamic> toJson() => {
     "status": status,
     "message": message,
     "count": count,
-    "application_log": List<dynamic>.from(
-      applicationLog.map((x) => x.toJson()),
-    ),
+    if (applicationLog != null)
+      "application_log": List<dynamic>.from(
+        applicationLog!.map((x) => x.toJson()),
+      ),
   };
 }
 

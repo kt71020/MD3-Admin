@@ -36,7 +36,7 @@ abstract class _Paths {
   static const application = '/application';
   static const SHOP = '/shop';
   static const applicationAdd = '/application/add';
-  static const applicationRequest = '/application/request';
-  static const applicationUserRequest = '/application/user/request';
+  static const applicationRequest = '/application/request/:filter';
+  static const applicationUserRequest = '/application/user/request/:filter';
   static const applicationEdit = '/application/edit';
 }

@@ -26,14 +26,16 @@ class ApiUrls {
     // Web 未設定時改為走正式，不再預設 dev
     'webDefault': 'https://producer.uirapuka.com',
     'redis': 'https://producer.uirapuka.com',
+    'proxy': 'http://dev.uirapuka.com:5120',
   };
 
   /// 取得主要 API 基礎 URL
   static String get baseUrl {
     // 1) 優先使用 --dart-define（適用 Web 與任意平台 Release）
     if (_apiUrlDefine.isNotEmpty) {
-      if (!kReleaseMode)
+      if (!kReleaseMode) {
         debugPrint('🔄 Using --dart-define API_URL: $_apiUrlDefine');
+      }
       return _apiUrlDefine;
     }
 
@@ -46,18 +48,21 @@ class ApiUrls {
       // 3) Web 若有 --dart-define/ENV 的 PROXY_URL 亦可覆蓋
       final proxyFromDefine = _proxyUrlDefine;
       if (proxyFromDefine.isNotEmpty) {
-        if (!kReleaseMode)
+        if (!kReleaseMode) {
           debugPrint('🔄 Using --dart-define PROXY_URL: $proxyFromDefine');
+        }
         return proxyFromDefine;
       }
       final proxyFromEnv = _getEnvValue('PROXY_URL');
       if (proxyFromEnv.isNotEmpty) {
-        if (!kReleaseMode)
+        if (!kReleaseMode) {
           debugPrint('🔄 Using PROXY_URL from .env: $proxyFromEnv');
+        }
         return proxyFromEnv;
       }
-      if (!kReleaseMode)
+      if (!kReleaseMode) {
         debugPrint('🌐 Using Web default (production) backend connection');
+      }
       return _defaultUrls['webDefault']!;
     }
 
@@ -71,12 +76,19 @@ class ApiUrls {
     return _getEnvValue('REDIS_URL', fallback: _defaultUrls['redis']!);
   }
 
+  /// 取得 Proxy URL
+  static String get proxyUrl {
+    if (_proxyUrlDefine.isNotEmpty) return _proxyUrlDefine;
+    return _getEnvValue('PROXY_URL', fallback: _defaultUrls['proxy']!);
+  }
+
   /// 取得環境變數值
   static String _getEnvValue(String key, {String fallback = ''}) {
     if (!dotenv.isInitialized) return fallback;
     final value = dotenv.get(key, fallback: fallback);
-    if (!kReleaseMode)
+    if (!kReleaseMode) {
       debugPrint('🔄 取得環境變數：$key -> ${value.isNotEmpty ? '[set]' : '[empty]'}');
+    }
     return value;
   }
 

@@ -519,10 +519,10 @@ class ApplicationController extends GetxController {
       if (result.isSuccess) {
         // 將 API 回應轉換成 ApplicationModel
         final model = ApplicationModel.fromJson(result.data!);
-        debugPrint('🔄 取得案件列表成功：${model.data.length} 筆');
+        debugPrint('🔄 取得案件列表成功：${model.data?.length ?? 0} 筆');
         // 更新觀察變數
         applicationModel.value = model;
-        applicationList.value = model.data;
+        applicationList.value = model.data ?? [];
         totalItems.value = model.count;
         this.channel.value = channel;
 
@@ -584,13 +584,14 @@ class ApplicationController extends GetxController {
       );
 
       if (result.isSuccess) {
-        Get.snackbar(
-          '✅ 批准成功',
-          '案件 #$applicationId 已被批准',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Get.theme.colorScheme.primaryContainer,
-          colorText: Get.theme.colorScheme.onPrimaryContainer,
-        );
+        // _showSuccessSnackbar('✅ 批准成功', '案件 #$applicationId 已被批准');
+        // Get.snackbar(
+        //   '✅ 批准成功',
+        //   '案件 #$applicationId 已被批准',
+        //   snackPosition: SnackPosition.TOP,
+        //   backgroundColor: Get.theme.colorScheme.primaryContainer,
+        //   colorText: Get.theme.colorScheme.onPrimaryContainer,
+        // );
         return true;
       } else {
         _handleError(result.error ?? '批准案件失敗');
@@ -632,10 +633,10 @@ class ApplicationController extends GetxController {
     Get.snackbar(
       '❌ 錯誤',
       error,
-      snackPosition: SnackPosition.TOP,
+      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Get.theme.colorScheme.errorContainer,
       colorText: Get.theme.colorScheme.onErrorContainer,
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 15),
     );
   }
 
@@ -859,8 +860,8 @@ class ApplicationController extends GetxController {
 
       if (result.isSuccess) {
         Get.snackbar(
-          '✅ 批准成功',
-          '案件 #$applicationId 已被批准',
+          '✅ 退回重新輸入',
+          '案件 #$applicationId 資料錯誤退回',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Get.theme.colorScheme.primaryContainer,
           colorText: Get.theme.colorScheme.onPrimaryContainer,
@@ -892,13 +893,14 @@ class ApplicationController extends GetxController {
       );
 
       if (result.isSuccess) {
-        Get.snackbar(
-          '✅ 批准成功',
-          '案件 #$applicationId 已被批准',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Get.theme.colorScheme.primaryContainer,
-          colorText: Get.theme.colorScheme.onPrimaryContainer,
-        );
+        _showSuccessSnackbar('✅ 結案成功', '案件 #$applicationId 已結案');
+        // Get.snackbar(
+        //   '✅ 批准成功',
+        //   '案件 #$applicationId 已被批准',
+        //   snackPosition: SnackPosition.TOP,
+        //   backgroundColor: Get.theme.colorScheme.primaryContainer,
+        //   colorText: Get.theme.colorScheme.onPrimaryContainer,
+        // );
         return true;
       } else {
         _handleError(result.error ?? '批准案件失敗');
@@ -997,7 +999,7 @@ class ApplicationController extends GetxController {
             .toList();
       case 'IN_PROGRESS':
         return applicationList.where((e) => e.status == '1').toList();
-      case 'WAITING_REVIEW2':
+      case 'WAITING_REVIEW':
         return applicationList.where((e) => e.status == '4').toList();
       case 'ALL':
       default:
@@ -1084,6 +1086,30 @@ class ApplicationController extends GetxController {
     debugPrint('✅ 已更新欄位 $fieldName: $value');
   }
 
+  /// 檢查必要欄位是否填寫
+  bool ensureRequiredFields(Application app, {String action = ''}) {
+    final List<String> missing = [];
+    if ((app.shopName).trim().isEmpty) missing.add('商店名稱');
+    if ((app.shopPhone).trim().isEmpty) missing.add('訂購電話');
+    if ((app.shopCity ?? '').trim().isEmpty) missing.add('城市');
+    if ((app.shopRegion ?? '').trim().isEmpty) missing.add('鄉鎮市區');
+    if ((app.shopAddress).trim().isEmpty) missing.add('地址');
+
+    if (missing.isNotEmpty) {
+      final msg = '請先填寫以下必填欄位：${missing.join('、')}';
+      Get.snackbar(
+        '⚠️ 操作失敗${action.isNotEmpty ? '（$action）' : ''}',
+        msg,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
+        duration: const Duration(seconds: 4),
+      );
+      return false;
+    }
+    return true;
+  }
+
   /// 儲存申請資料
   Future<bool> saveApplicationData() async {
     if (editingApplication.value == null) {
@@ -1096,7 +1122,6 @@ class ApplicationController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
 
-      // TODO: 實現儲存 API 調用
       final result = await _applicationService.updateApplication(
         editingApplication.value!.id,
         editingApplication.value!.shopName,
@@ -1114,13 +1139,14 @@ class ApplicationController extends GetxController {
       );
 
       if (result.isSuccess) {
-        Get.snackbar(
-          '✅ 儲存成功',
-          '申請資料已更新',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Get.theme.colorScheme.primaryContainer,
-          colorText: Get.theme.colorScheme.onPrimaryContainer,
-        );
+        _showSuccessSnackbar('✅ 儲存成功', '申請資料已更新');
+        // Get.snackbar(
+        //   '✅ 儲存成功',
+        //   '申請資料已更新',
+        //   snackPosition: SnackPosition.TOP,
+        //   backgroundColor: Get.theme.colorScheme.primaryContainer,
+        //   colorText: Get.theme.colorScheme.onPrimaryContainer,
+        // );
 
         // 同步更新列表中的該筆資料，避免畫面重建後出現舊值
         final edited = editingApplication.value!;
@@ -1211,10 +1237,10 @@ class ApplicationController extends GetxController {
       if (result.isSuccess) {
         // 將 API 回應轉換成 ApplicationModel
         final model = ApplicationLogModel.fromJson(result.data!);
-        debugPrint('🔄 取得案件列表成功：${model.applicationLog.length} 筆');
+        debugPrint('🔄 取得案件列表成功：${model.applicationLog?.length} 筆');
         // 更新觀察變數
         applicationLogModel.value = model;
-        applicationLogList.value = model.applicationLog;
+        applicationLogList.value = model.applicationLog ?? [];
         totalLogItems.value = model.count;
 
         return model;
@@ -1363,7 +1389,7 @@ class ApplicationController extends GetxController {
   /// ==========================================
   /// 取得統計資料
   /// ==========================================
-  Future<AppleicationSummaryModel?> getApplicationSummary() async {
+  Future<void> getApplicationSummary() async {
     try {
       isLoading.value = true;
       hasError.value = false;
@@ -1375,16 +1401,28 @@ class ApplicationController extends GetxController {
         final model = AppleicationSummaryModel.fromJson(result.data!);
         debugPrint('🔄 取得統計資料成功：${model.channel.shop.totalApplication} 筆');
         applicationSummary.value = model;
-        return model;
       } else {
         _handleError(result.error ?? '取得統計資料失敗');
-        return null;
       }
     } catch (e) {
+      debugPrint('🔄 取得統計資料時發生錯誤：$e');
+
       _handleError('取得統計資料時發生錯誤：$e');
-      return null;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// 顯示成功訊息
+  void _showSuccessSnackbar(String title, String message) {
+    Get.snackbar(
+      icon: const Icon(Icons.check_circle, color: Colors.green, size: 44),
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primaryContainer,
+      colorText: Get.theme.colorScheme.onPrimaryContainer,
+      duration: const Duration(seconds: 5),
+    );
   }
 }

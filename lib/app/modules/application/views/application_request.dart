@@ -20,21 +20,31 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
   @override
   void initState() {
     super.initState();
+    // 優先從動態路由參數取得 :filter，其次取 query 參數
+    String? filter = Get.parameters['filter'] ?? Get.parameters['id'];
+    // 正規化大小寫
+    if (filter != null) {
+      filter = filter.toUpperCase();
+    }
+
     controller = Get.find<ApplicationController>();
-
-    // 清除之前的錯誤狀態
-    controller.clearErrorState();
-
-    // 每次進入頁面時載入資料
+    // 延後到第一幀後再更新 Rx，避免在 build 階段觸發 Obx 重建
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 預設為 ALL
+      controller.setRequestFilter(filter ?? 'ALL');
+      debugPrint('🔄 接收到的  的Filter value: $filter');
+      // 清除之前的錯誤狀態
+      controller.clearErrorState();
+      // 每次進入頁面時載入資料
       controller.getApplicationList(widget.channel);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final String appBarTitle = widget.channel == 'USER' ? '使用者推薦管理' : '商店進件管理';
     return Scaffold(
-      appBar: AppBar(title: const Text('商店進件管理'), centerTitle: true),
+      appBar: AppBar(title: Text(appBarTitle), centerTitle: true),
       body: _buildApplicationBody(context),
     );
   }
@@ -196,7 +206,7 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
             ),
             buildBtn(
               text: '待複檢',
-              value: 'WAITING_REVIEW2',
+              value: 'WAITING_REVIEW',
               bg: const Color(0xFFCFE2FF),
               fg: const Color(0xFF084298),
               border: const Color(0xFFB6D4FE),
@@ -216,7 +226,8 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
 
   /// 建立申請列表表格
   Widget _buildApplicationTable(BuildContext context) {
-    if (controller.applicationList.isEmpty) {
+    // 需考慮篩選後結果為 0 的情況
+    if (controller.filteredApplicationList.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(48.0),

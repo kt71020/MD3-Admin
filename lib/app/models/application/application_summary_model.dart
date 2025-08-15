@@ -58,48 +58,52 @@ class Channel {
 class ApplicationSummary {
   int processing;
   int newApplication;
-  String channel;
+  String? channel;
   int approve;
   int colse;
   int pedding;
   int reject;
   int totalApplication;
   int check;
+  int activeApplication;
 
   ApplicationSummary({
     required this.processing,
     required this.newApplication,
-    required this.channel,
+    this.channel,
     required this.approve,
     required this.colse,
     required this.pedding,
     required this.reject,
     required this.totalApplication,
     required this.check,
+    required this.activeApplication,
   });
 
   factory ApplicationSummary.fromJson(Map<String, dynamic> json) =>
       ApplicationSummary(
         processing: json["processing"],
         newApplication: json["newApplication"],
-        channel: json["channel"],
+        channel: json["channel"]?.toString(),
         approve: json["approve"],
         colse: json["colse"],
         pedding: json["pedding"],
         reject: json["reject"],
         totalApplication: json["totalApplication"],
         check: json["check"],
+        activeApplication: json["activeApplication"],
       );
 
   Map<String, dynamic> toJson() => {
     "processing": processing,
     "newApplication": newApplication,
-    "channel": channel,
+    if (channel != null) "channel": channel,
     "approve": approve,
     "colse": colse,
     "pedding": pedding,
     "reject": reject,
     "totalApplication": totalApplication,
     "check": check,
+    "activeApplication": activeApplication,
   };
 }

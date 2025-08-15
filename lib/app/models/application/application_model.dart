@@ -14,12 +14,12 @@ class ApplicationModel {
   int count;
   int status;
   String message;
-  List<Application> data;
+  List<Application>? data;
 
   ApplicationModel({
     required this.count,
     required this.status,
-    required this.data,
+    this.data,
     required this.message,
   });
 
@@ -27,16 +27,19 @@ class ApplicationModel {
       ApplicationModel(
         count: json["count"],
         status: json["status"],
-        data: List<Application>.from(
-          json["data"].map((x) => Application.fromJson(x)),
-        ),
+        data:
+            json["data"] != null
+                ? List<Application>.from(
+                  json["data"].map((x) => Application.fromJson(x)),
+                )
+                : null,
         message: json["message"],
       );
 
   Map<String, dynamic> toJson() => {
     "count": count,
     "status": status,
-    "data": List<dynamic>.from(data.map((x) => x.toJson())),
+    if (data != null) "data": List<dynamic>.from(data!.map((x) => x.toJson())),
     "message": message,
   };
 }
