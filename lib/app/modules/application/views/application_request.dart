@@ -2,13 +2,14 @@ import 'package:admin/app/core/utils/responsive_utils.dart';
 import 'package:admin/app/core/widgets/responsive_layout.dart';
 import 'package:admin/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../models/application/application_model.dart';
 import '../controllers/application_controller.dart';
 
 class ApplicationRequest extends StatefulWidget {
-  final String channel;
-  const ApplicationRequest({super.key, required this.channel});
+  final String? channel;
+  const ApplicationRequest({super.key, this.channel});
 
   @override
   State<ApplicationRequest> createState() => _ApplicationRequestState();
@@ -20,23 +21,44 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
   @override
   void initState() {
     super.initState();
-    // 優先從動態路由參數取得 :filter，其次取 query 參數
-    String? filter = Get.parameters['filter'] ?? Get.parameters['id'];
+
+    // 先初始化 controller
+    controller = Get.find<ApplicationController>();
+
+    // 從動態路由參數取得 :channel 和 :filter
+    String? filter = Get.parameters['filter'];
+    String? channel2 = Get.parameters['channel'];
+
     // 正規化大小寫
     if (filter != null) {
       filter = filter.toUpperCase();
+      debugPrint('🔄 接收到的 Filter value: $filter');
     }
 
-    controller = Get.find<ApplicationController>();
+    // 設定 channel - 優先使用路由參數
+    if (channel2 != null) {
+      controller.channel.value = channel2.toUpperCase();
+      debugPrint('🔄 從路由參數接收到的 Channel value: $channel2');
+    } else if (widget.channel != null) {
+      controller.channel.value = widget.channel!.toUpperCase();
+      debugPrint('🔄 從 widget 接收到的 Channel value: ${widget.channel}');
+    } else {
+      controller.channel.value = 'SHOP';
+      debugPrint('🔄 使用預設 Channel value: SHOP');
+    }
+
     // 延後到第一幀後再更新 Rx，避免在 build 階段觸發 Obx 重建
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 預設為 ALL
-      controller.setRequestFilter(filter ?? 'ALL');
-      debugPrint('🔄 接收到的  的Filter value: $filter');
+      // 設定 filter，如果沒有則預設為 ALL
+      final effectiveFilter = filter ?? 'ALL';
+      controller.setRequestFilter(effectiveFilter);
+      debugPrint('🔄 最終設定的 Filter value: $effectiveFilter');
+      debugPrint('🔄 最終設定的 Channel value: ${controller.channel.value}');
+
       // 清除之前的錯誤狀態
       controller.clearErrorState();
       // 每次進入頁面時載入資料
-      controller.getApplicationList(widget.channel);
+      controller.getApplicationList(controller.channel.value);
     });
   }
 
@@ -143,6 +165,11 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
 
           // 申請列表表格（需隨篩選/資料變動更新）
           Obx(() => _buildApplicationTable(context)),
+
+          const SizedBox(height: 16),
+
+          // CSV 內容顯示區域
+          Obx(() => _buildCsvContentDisplay(context)),
 
           const SizedBox(height: 16),
           // 分頁資訊和導航
@@ -519,5 +546,106 @@ class _ApplicationRequestState extends State<ApplicationRequest> {
     } catch (e) {
       return dateTimeStr;
     }
+  }
+
+  /// 建立 CSV 內容顯示區域
+  Widget _buildCsvContentDisplay(BuildContext context) {
+    if (controller.csvContentList.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        border: Border.all(color: Colors.blue.shade200),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.file_present, color: Colors.blue.shade600, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'CSV 上傳結果',
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  final allContent = controller.csvContentList.join('\n');
+                  Clipboard.setData(ClipboardData(text: allContent));
+                  Get.snackbar(
+                    '✅ 已複製',
+                    'CSV 內容已複製到剪貼簿',
+                    snackPosition: SnackPosition.TOP,
+                    duration: const Duration(seconds: 2),
+                  );
+                },
+                icon: Icon(Icons.copy, color: Colors.blue.shade600, size: 20),
+                tooltip: '複製全部內容',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '共 ${controller.csvContentList.length} 行資料',
+            style: TextStyle(color: Colors.blue.shade600, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    controller.csvContentList.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final content = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 40,
+                              child: Text(
+                                '${index + 1}.',
+                                style: TextStyle(
+                                  color: Colors.blue.shade600,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: SelectableText(
+                                content,
+                                style: TextStyle(
+                                  color: Colors.blue.shade700,
+                                  fontSize: 12,
+                                  fontFamily: 'monospace',
+                                ),
+                                maxLines: null,
+                                enableInteractiveSelection: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
