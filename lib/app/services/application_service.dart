@@ -1,3 +1,4 @@
+import 'package:admin/app/models/application/application_model.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_urls.dart';
@@ -143,14 +144,17 @@ class ApplicationService {
 
   /// 案件審核結果：結案
   Future<ApiResult<bool>> applicationCaseClose({
-    required int applicationId,
+    required Application application,
   }) async {
     final authService = AuthService.instance;
 
     final result = await _apiService.post(
       ApiUrls.applicationCaseCloseAPI,
       data: {
-        "id": applicationId,
+        "id": application.id,
+        "status": application.status,
+        "shop_name": application.shopName,
+        "request_uid": application.uid,
         "close_by": authService.currentUid,
         "close_by_name": authService.currentUserName,
       },
