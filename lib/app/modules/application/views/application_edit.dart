@@ -519,7 +519,7 @@ class ApplicationEdit extends GetView<ApplicationController> {
             isDense: maxLines == 1, // 只有單行時才使用 isDense
             // 統一背景色：可編輯時green.shade100，不可編輯時orange.shade100
             filled: true,
-            fillColor: enabled ? Colors.green.shade50 : Colors.orange.shade50,
+            fillColor: enabled ? Colors.green.shade50 : Colors.grey.shade50,
           ),
           style: TextStyle(
             // 統一文字色：可編輯時黑色，不可編輯時灰色
@@ -1127,8 +1127,26 @@ class ApplicationEdit extends GetView<ApplicationController> {
                     );
 
                     // 延遲一下再跳轉，讓 snackbar 有時間顯示
+                    // 更新 summary 資料
+                    await controller.getApplicationSummary();
+                    // 重新載入列表
+                    controller.getApplicationList(
+                      application.channel,
+                    ); // 重新載入列表
                     await Future.delayed(const Duration(milliseconds: 500));
-                    Get.toNamed(Routes.applicationRequest); // 返回列表頁
+                    if (application.channel == 'APPLICATION') {
+                      Get.toNamed(
+                        '/application/list/APPLICATION/PENDING_REVIEW',
+                      ); // 返回列表頁面
+                    } else if (application.channel == 'USER') {
+                      Get.toNamed(
+                        '/application/list/USER/PENDING_REVIEW',
+                      ); // 返回列表頁面
+                    } else if (application.channel == 'SHOP') {
+                      Get.toNamed(
+                        '/application/list/SHOP/PENDING_REVIEW',
+                      ); // 返回列表頁面
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1169,10 +1187,20 @@ class ApplicationEdit extends GetView<ApplicationController> {
         duration: const Duration(seconds: 5),
       );
 
-      // 延遲一下再跳轉，讓 snackbar 有時間顯示
       await Future.delayed(const Duration(milliseconds: 500));
-      Get.toNamed(Routes.applicationRequest); // 返回列表頁面
-      // controller.getApplicationList(); // 重新載入列表
+      // 更新 summary 資料
+      await controller.getApplicationSummary();
+      controller.getApplicationList(application.channel); // 重新載入列表
+      if (application.channel == 'APPLICATION') {
+        debugPrint('🔄 跳轉到 APPLICATION 列表頁面');
+        Get.toNamed('/application/list/APPLICATION/PENDING_REVIEW'); // 返回列表頁面
+      } else if (application.channel == 'USER') {
+        debugPrint('🔄 跳轉到 USER 列表頁面');
+        Get.toNamed('/application/list/USER/PENDING_REVIEW'); // 返回列表頁面
+      } else if (application.channel == 'SHOP') {
+        debugPrint('🔄 跳轉到 SHOP 列表頁面');
+        Get.toNamed('/application/list/SHOP/PENDING_REVIEW'); // 返回列表頁面
+      }
     }
   }
 
@@ -1223,25 +1251,54 @@ class ApplicationEdit extends GetView<ApplicationController> {
       );
       return;
     }
-    final success = await controller.uploadCSVAndAddShop(application.id);
+    final success = await controller.uploadCSVAndAddShop(
+      application.id,
+      application.channel,
+    );
     if (success) {
-      // 更新 status 為 4 等待複檢
-      application.status = '4';
-      // controller.applicationList 更新 id=application.id 的 status 為 4
-      controller
-          .applicationList
-          .firstWhere((element) => element.id == application.id)
-          .status = '4';
+      // // 更新 status 為 4 等待複檢
+      // application.status = '4';
+      // controller
+      //     .applicationList
+      //     .firstWhere((element) => element.id == application.id)
+      //     .status = '4';
+      // 延遲一下再跳轉，讓 snackbar 有時間顯示
+      await Future.delayed(const Duration(milliseconds: 500));
+      // 更新 summary 資料
+      await controller.getApplicationSummary();
+      controller.getApplicationList(application.channel); // 重新載入列表
+      if (application.channel == 'APPLICATION') {
+        debugPrint('🔄 跳轉到 APPLICATION 列表頁面');
+        Get.toNamed('/application/list/APPLICATION/WAITING_REVIEW'); // 返回列表頁面
+      } else if (application.channel == 'USER') {
+        debugPrint('🔄 跳轉到 USER 列表頁面');
+        Get.toNamed('/application/list/USER/WAITING_REVIEW'); // 返回列表頁面
+      } else if (application.channel == 'SHOP') {
+        debugPrint('🔄 跳轉到 SHOP 列表頁面');
+        Get.toNamed('/application/list/SHOP/WAITING_REVIEW'); // 返回列表頁面
+      }
     }
     return;
   }
 
   /// 結案
   void _closeCase(BuildContext context, Application application) async {
-    final success = await controller.caseClose(application.id);
+    final success = await controller.caseClose(application);
     if (success) {
-      Get.back(); // 返回列表頁面
+      await Future.delayed(const Duration(milliseconds: 500));
+      // 更新 summary 資料
+      await controller.getApplicationSummary();
       controller.getApplicationList(application.channel); // 重新載入列表
+      if (application.channel == 'APPLICATION') {
+        debugPrint('🔄 跳轉到 APPLICATION 列表頁面');
+        Get.toNamed('/application/list/APPLICATION/WAITING_REVIEW'); // 返回列表頁面
+      } else if (application.channel == 'USER') {
+        debugPrint('🔄 跳轉到 USER 列表頁面');
+        Get.toNamed('/application/list/USER/WAITING_REVIEW'); // 返回列表頁面
+      } else if (application.channel == 'SHOP') {
+        debugPrint('🔄 跳轉到 SHOP 列表頁面');
+        Get.toNamed('/application/list/SHOP/WAITING_REVIEW'); // 返回列表頁面
+      }
     }
   }
 
