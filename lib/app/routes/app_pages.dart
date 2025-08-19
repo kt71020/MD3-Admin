@@ -96,6 +96,12 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
+      name: _Paths.applicationList,
+      page: () => ApplicationRequest(),
+      binding: ApplicationBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
       name: _Paths.applicationEdit,
       page: () => const ApplicationEdit(),
       binding: ApplicationBinding(),
