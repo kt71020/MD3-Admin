@@ -1,5 +1,6 @@
 import 'package:admin/app/core/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/application_controller.dart';
 
@@ -54,45 +55,18 @@ class ApplicationAdd extends GetView<ApplicationController> {
                             )
                             : Column(
                               children: [
-                                TextButton.icon(
-                                  onPressed: controller.pickAndUploadCSVFile,
-                                  icon: const Icon(
-                                    Icons.file_upload,
-                                    color: Colors.white,
-                                  ),
-                                  label: const Text(
-                                    '上傳檔案',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 12,
-                                    ),
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-
-                                // 新增：一鍵完成按鈕
-                                Container(
-                                  width: double.infinity,
-                                  height: 1,
-                                  color: Colors.grey.shade300,
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                ),
-
+                                // 一鍵完成按鈕
                                 Obx(
                                   () => ElevatedButton.icon(
                                     onPressed:
                                         (controller.isFileUploading.value ||
                                                 controller.isApiUploading.value)
                                             ? null
-                                            : () => controller
-                                                .uploadCSVAndAddShop(0),
+                                            : () =>
+                                                controller.uploadCSVAndAddShop(
+                                                  0,
+                                                  'ADMIN',
+                                                ),
                                     icon:
                                         (controller.isFileUploading.value ||
                                                 controller.isApiUploading.value)
@@ -109,7 +83,7 @@ class ApplicationAdd extends GetView<ApplicationController> {
                                       (controller.isFileUploading.value ||
                                               controller.isApiUploading.value)
                                           ? '正在處理...'
-                                          : '🚀 一鍵完成',
+                                          : '🚀 上傳檔案新增商店',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -136,15 +110,6 @@ class ApplicationAdd extends GetView<ApplicationController> {
                                     color: Colors.orange.shade600,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 8),
-                                Text(
-                                  '支援 CSV 格式檔案',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -245,205 +210,140 @@ class ApplicationAdd extends GetView<ApplicationController> {
 
             const SizedBox(height: 24),
 
-            // 新增商店按鍵
+            // CSV 內容顯示區域
             Obx(
               () =>
-                  controller.selectedFileName.value.isNotEmpty &&
-                          controller.csvData.isNotEmpty &&
-                          controller.uploadResult.value == null
-                      ? Column(
-                        children: [
-                          const Divider(),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: Obx(
-                              () => ElevatedButton.icon(
-                                onPressed:
-                                    controller.isApiUploading.value
-                                        ? null
-                                        : () => controller.uploadAddShop(
-                                          0,
-                                          'APPLICATION_USER',
-                                        ),
-                                icon:
-                                    controller.isApiUploading.value
-                                        ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                        : const Icon(Icons.cloud_upload),
-                                label: Text(
-                                  controller.isApiUploading.value
-                                      ? '正在新增商店...'
-                                      : '新增商店',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                  controller.csvContentList.isNotEmpty
+                      ? Container(
+                        margin: const EdgeInsets.only(top: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          border: Border.all(color: Colors.blue.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.file_present,
+                                  color: Colors.blue.shade600,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'CSV 上傳結果',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                IconButton(
+                                  onPressed: () {
+                                    final allContent = controller.csvContentList
+                                        .join('\n');
+                                    Clipboard.setData(
+                                      ClipboardData(text: allContent),
+                                    );
+                                    Get.snackbar(
+                                      '✅ 已複製',
+                                      'CSV 內容已複製到剪貼簿',
+                                      snackPosition: SnackPosition.TOP,
+                                      duration: const Duration(seconds: 2),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    Icons.copy,
+                                    color: Colors.blue.shade600,
+                                    size: 20,
                                   ),
+                                  tooltip: '複製全部內容',
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '共 ${controller.csvContentList.length} 行資料',
+                              style: TextStyle(
+                                color: Colors.blue.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 200),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children:
+                                      controller.csvContentList
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                            final index = entry.key;
+                                            final content = entry.value;
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 2,
+                                                  ),
+                                              child: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 40,
+                                                    child: Text(
+                                                      '${index + 1}.',
+                                                      style: TextStyle(
+                                                        color:
+                                                            Colors
+                                                                .blue
+                                                                .shade600,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: SelectableText(
+                                                      content,
+                                                      style: TextStyle(
+                                                        color:
+                                                            Colors
+                                                                .blue
+                                                                .shade700,
+                                                        fontSize: 12,
+                                                        fontFamily: 'monospace',
+                                                      ),
+                                                      maxLines: null,
+                                                      enableInteractiveSelection:
+                                                          true,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '將會上傳至後端 API 進行格式檢查並新增至資料庫',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-
-                          // API 結果顯示
-                          Obx(
-                            () =>
-                                controller.uploadResult.value != null
-                                    ? Container(
-                                      margin: const EdgeInsets.only(top: 16),
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.shade50,
-                                        border: Border.all(
-                                          color: Colors.blue.shade200,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.info_outline,
-                                                color: Colors.blue.shade600,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'API 回應結果',
-                                                style: TextStyle(
-                                                  color: Colors.blue.shade700,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            '狀態：${controller.uploadResult.value!['Status'] ?? controller.uploadResult.value!['status'] ?? 'N/A'}',
-                                            style: TextStyle(
-                                              color: Colors.blue.shade700,
-                                            ),
-                                          ),
-                                          Builder(
-                                            builder: (context) {
-                                              // 解析 SID 的邏輯
-                                              String sid = '';
-                                              final result =
-                                                  controller
-                                                      .uploadResult
-                                                      .value!;
-                                              if (result['sid'] != null) {
-                                                sid = result['sid'].toString();
-                                              } else if (result['SID'] !=
-                                                  null) {
-                                                sid = result['SID'].toString();
-                                              } else if (result['data'] !=
-                                                      null &&
-                                                  result['data']['upload_shop'] !=
-                                                      null &&
-                                                  result['data']['upload_shop']['sid'] !=
-                                                      null) {
-                                                sid =
-                                                    result['data']['upload_shop']['sid']
-                                                        .toString();
-                                              }
-
-                                              return sid.isNotEmpty
-                                                  ? Text(
-                                                    '商店編號：$sid',
-                                                    style: TextStyle(
-                                                      color:
-                                                          Colors.blue.shade700,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  )
-                                                  : const SizedBox.shrink();
-                                            },
-                                          ),
-                                          if (controller
-                                                  .uploadResult
-                                                  .value!['message'] !=
-                                              null)
-                                            Text(
-                                              '訊息：${controller.uploadResult.value!['message']}',
-                                              style: TextStyle(
-                                                color: Colors.blue.shade700,
-                                              ),
-                                            ),
-
-                                          // 重新開始按鍵
-                                          const SizedBox(height: 16),
-                                          const Divider(),
-                                          const SizedBox(height: 8),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: ElevatedButton.icon(
-                                              onPressed:
-                                                  controller.clearSelectedFile,
-                                              icon: const Icon(Icons.refresh),
-                                              label: const Text(
-                                                '繼續新增商店',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.orange,
-                                                foregroundColor: Colors.white,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      vertical: 12,
-                                                    ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            '點擊重新開始下一輪新增作業',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 12,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                    : const SizedBox.shrink(),
-                          ),
-                        ],
+                          ],
+                        ),
                       )
                       : const SizedBox.shrink(),
             ),
+
+            const SizedBox(height: 24),
+
+            // 移除無用的 API 結果顯示，因為現在使用 csvContentList 來顯示結果
           ],
         ),
       ),
