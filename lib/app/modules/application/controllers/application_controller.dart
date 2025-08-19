@@ -1,6 +1,7 @@
 import 'package:admin/app/models/application/application_csv_model.dart';
 import 'package:admin/app/models/application/application_log_model.dart';
 import 'package:admin/app/models/application/application_summary_model.dart';
+import 'package:admin/app/models/application/application_upload_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin/app/services/auth_service.dart';
@@ -40,7 +41,7 @@ class ApplicationController extends GetxController {
   // 申請資料
   final applicationModel = Rxn<ApplicationModel>();
   final applicationList = <Application>[].obs;
-  // 申請列表過濾器：ALL | PENDING_REVIEW | IN_PROGRESS | WAITING_REVIEW2
+  // 申請列表過濾器：ALL | PENDING_REVIEW | IN_PROGRESS | WAITING_REVIEW
   final requestFilter = 'ALL'.obs;
 
   // 案件歷程紀錄
@@ -63,6 +64,9 @@ class ApplicationController extends GetxController {
   final pageOptions = [5, 30, 50, 100].obs;
 
   final channel = 'SHOP'.obs;
+
+  // CSV 上傳結果
+  final csvContentList = <String>[].obs;
 
   // 統計摘要資料
   final applicationSummary = Rxn<AppleicationSummaryModel>();
@@ -387,6 +391,7 @@ class ApplicationController extends GetxController {
     int applicationId,
     String applicationType,
   ) async {
+    csvContentList.value = []; // 清空 CSV 內容
     try {
       isApiUploading.value = true;
       hasError.value = false;
@@ -419,7 +424,11 @@ class ApplicationController extends GetxController {
       // 加入用戶 ID（如果需要）
       request.fields['uid'] = authService.currentUid;
       request.fields['application_id'] = applicationId.toString();
-      request.fields['application_type'] = applicationType;
+      request.fields['application_type'] = applicationType; // USER 或 SHOP
+      request.fields['application_channel'] = applicationType; // USER 或 SHOP
+      // 加入額外的表單欄位，有些API需要這些資訊
+      request.fields['file_type'] = 'csv';
+      request.fields['upload_type'] = 'shop_data';
 
       // 加入 CSV 檔案內容 - 使用正確的欄位名稱和格式
       final csvBytes = utf8.encode(rawCsvContent.value);
@@ -437,10 +446,6 @@ class ApplicationController extends GetxController {
         ),
       );
 
-      // 加入額外的表單欄位，有些API需要這些資訊
-      request.fields['file_type'] = 'csv';
-      request.fields['upload_type'] = 'shop_data';
-
       debugPrint('📁 上傳檔案：$filename (${csvBytes.length} bytes)');
 
       // 發送請求
@@ -454,36 +459,31 @@ class ApplicationController extends GetxController {
       // 處理回應
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body) as Map<String, dynamic>;
-        uploadResult.value = responseData;
-
-        // 檢查業務邏輯狀態
-        final status = responseData['Status'] ?? responseData['status'] ?? 0;
-        final message =
-            responseData['message'] ?? responseData['Message'] ?? '未知錯誤';
-
-        // 解析 SID - 檢查多層結構
-        String sid = '';
-        if (responseData['sid'] != null) {
-          sid = responseData['sid'].toString();
-        } else if (responseData['SID'] != null) {
-          sid = responseData['SID'].toString();
-        } else if (responseData['data'] != null &&
-            responseData['data']['upload_shop'] != null &&
-            responseData['data']['upload_shop']['sid'] != null) {
-          sid = responseData['data']['upload_shop']['sid'].toString();
-        }
-
+        debugPrint('📨 API 回應內容: $responseData');
+        ApplicationUploadModel uploadResult = ApplicationUploadModel.fromJson(
+          responseData,
+        );
+        csvContentList.value = uploadResult.csvContentList;
+        final int status = uploadResult.status;
+        final String message = uploadResult.message.join('\n');
+        final int sid = uploadResult.sid;
         debugPrint('✅ 商店新增成功 - SID: $sid, 狀態: $status');
 
-        if (status == 1) {
+        if (status == 1 && uploadResult.error == 0) {
+          // 更新 applicationList 中 status 為 4 已審核
+          for (final element in applicationList) {
+            if (element.id == applicationId) {
+              element.status = '4';
+            }
+          }
           // 成功
           Get.snackbar(
             '✅ 新增成功',
             '商店編號：$sid\n$message',
-            snackPosition: SnackPosition.TOP,
+            snackPosition: SnackPosition.BOTTOM,
             backgroundColor: Get.theme.colorScheme.primaryContainer,
             colorText: Get.theme.colorScheme.onPrimaryContainer,
-            duration: const Duration(seconds: 10),
+            duration: const Duration(seconds: 15),
           );
 
           return {
@@ -493,6 +493,14 @@ class ApplicationController extends GetxController {
             'message': message,
           };
         } else {
+          Get.snackbar(
+            '❌ 新增失敗',
+            '錯誤訊息：\n$message',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Get.theme.colorScheme.errorContainer,
+            colorText: Get.theme.colorScheme.onErrorContainer,
+            duration: const Duration(seconds: 30),
+          );
           // 業務邏輯錯誤
           throw Exception('新增商店失敗：$message');
         }
@@ -645,7 +653,7 @@ class ApplicationController extends GetxController {
   /// 整合 pickAndUploadCSVFile() 與 uploadAddShop() 的功能
   /// 讓使用者選擇檔案後直接進行商店新增程序
   /// ==========================================
-  Future<bool> uploadCSVAndAddShop(int applicationId) async {
+  Future<bool> uploadCSVAndAddShop(int applicationId, String uploadType) async {
     try {
       // 設置上傳狀態，防止重複點擊
       isApiUploading.value = true;
@@ -662,22 +670,26 @@ class ApplicationController extends GetxController {
 
       debugPrint('✅ 檔案選擇完成：${selectedFileName.value}');
       // 檢查CSV檔案的申請編號是否與申請編號相同
-      bool isApplicationIdMatch = _checkApplicationIdMatch(applicationId);
+      // 只有當 uploadType 為 'SHOP' 或 'USER' 且有申請編號時才檢查
+      if ((uploadType == 'SHOP' || uploadType == 'USER') && applicationId > 0) {
+        bool isApplicationIdMatch = _checkApplicationIdMatch(applicationId);
 
-      // 如果申請編號不匹配，停止執行
-      if (!isApplicationIdMatch) {
-        _handleError('CSV檔案中的申請編號與目標申請編號不符，請檢查檔案內容');
-        throw Exception('CSV檔案中的申請編號與目標申請編號不符，請檢查檔案內容');
+        // 如果申請編號不匹配，停止執行
+        if (!isApplicationIdMatch) {
+          _handleError('CSV檔案中的申請編號與目標申請編號不符，請檢查檔案內容');
+          throw Exception('CSV檔案中的申請編號與目標申請編號不符，請檢查檔案內容');
+        }
       }
 
       debugPrint('✅ 申請編號驗證通過，繼續執行...');
 
       // 第二步：直接上傳到API進行商店新增
       debugPrint('🚀 開始上傳檔案並新增商店...');
-      final result = await uploadAddShop(applicationId, 'APPLICATION');
+      final result = await uploadAddShop(applicationId, uploadType);
 
       if (result['success'] == true) {
         debugPrint('✅ 商店新增成功');
+        clearFileStateOnly();
         return true;
       } else {
         throw Exception(result['error'] ?? '上傳失敗');
@@ -882,18 +894,24 @@ class ApplicationController extends GetxController {
   /// ==========================================
   /// 案件審核結果：結案
   /// ==========================================
-  Future<bool> caseClose(int applicationId) async {
+  Future<bool> caseClose(Application application) async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
 
       final result = await _applicationService.applicationCaseClose(
-        applicationId: applicationId,
+        application: application,
       );
 
       if (result.isSuccess) {
-        _showSuccessSnackbar('✅ 結案成功', '案件 #$applicationId 已結案');
+        // 更新 applicationList 中 status 為 5 已結案
+        for (final element in applicationList) {
+          if (element.id == application.id) {
+            element.status = '5';
+          }
+        }
+        _showSuccessSnackbar('✅ 結案成功', '案件 #${application.id} 已結案');
         // Get.snackbar(
         //   '✅ 批准成功',
         //   '案件 #$applicationId 已被批准',
