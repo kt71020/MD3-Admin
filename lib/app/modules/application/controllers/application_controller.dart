@@ -1070,6 +1070,7 @@ class ApplicationController extends GetxController {
       shopCity: application.shopCity,
       shopRegion: application.shopRegion,
       channel: application.channel,
+      sid: application.sid,
     );
     hasUnsavedChanges.value = false;
   }

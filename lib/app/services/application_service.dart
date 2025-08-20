@@ -147,7 +147,6 @@ class ApplicationService {
     required Application application,
   }) async {
     final authService = AuthService.instance;
-
     final result = await _apiService.post(
       ApiUrls.applicationCaseCloseAPI,
       data: {
@@ -157,6 +156,7 @@ class ApplicationService {
         "request_uid": application.uid,
         "close_by": authService.currentUid,
         "close_by_name": authService.currentUserName,
+        "sid": application.sid,
       },
     );
 

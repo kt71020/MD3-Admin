@@ -77,6 +77,7 @@ class Application {
   String? shopCity;
   String? shopRegion;
   String channel;
+  int sid;
   Application({
     required this.id,
     required this.reviewNote,
@@ -110,6 +111,7 @@ class Application {
     required this.shopCity,
     required this.shopRegion,
     required this.channel,
+    required this.sid,
   });
 
   factory Application.fromJson(Map<String, dynamic> json) => Application(
@@ -145,6 +147,7 @@ class Application {
     shopCity: json["shop_city"],
     shopRegion: json["shop_region"],
     channel: json["channel"],
+    sid: json["sid"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -180,6 +183,7 @@ class Application {
     "shop_city": shopCity,
     "shop_region": shopRegion,
     "channel": channel,
+    "sid": sid,
   };
 
   /// 創建一個新的 Application 實例，只更新指定的欄位
@@ -216,6 +220,7 @@ class Application {
     String? shopCity,
     String? shopRegion,
     String? channel,
+    int? sid,
   }) {
     return Application(
       id: id ?? this.id,
@@ -250,6 +255,7 @@ class Application {
       shopCity: shopCity ?? this.shopCity,
       shopRegion: shopRegion ?? this.shopRegion,
       channel: channel ?? this.channel,
+      sid: sid ?? this.sid,
     );
   }
 }
