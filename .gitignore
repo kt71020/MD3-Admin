@@ -47,3 +47,4 @@ pubspec.lock
 node_modules/
 k8s/.env
 helm/.env
+Docker/Version/production.ver
